@@ -59,9 +59,10 @@ export default async function JobDetail({ params }: { params: { id: string } }) 
             </a>
           </div>
 
-          <div className="text-gray-700 whitespace-pre-wrap font-sans">
-            {safeDesc}
-          </div>
+          <div 
+            className="text-gray-700 prose prose-blue max-w-none" 
+            dangerouslySetInnerHTML={{ __html: safeDesc }} 
+          />
         </div>
       </div>
     </main>
