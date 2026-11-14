@@ -46,3 +46,4 @@ export default function PostJob() {
     </main>
   );
 }
+export const dynamic = "force-dynamic";

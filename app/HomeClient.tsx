@@ -61,3 +61,4 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
     </>
   );
 }
+export const dynamic = "force-dynamic";
