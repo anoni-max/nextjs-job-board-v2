@@ -5,7 +5,7 @@ import SearchBar from "./SearchBar";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function HomeClient({ jobs }: { jobs: any[] }) {
+export default function HomeClient({ jobs }: { jobs: Array<{ id: string | number; position: string; company: string; location: string; tags?: string[] }> }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredJobs = jobs.filter((job) => {
@@ -24,7 +24,7 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
         {filteredJobs.length === 0 ? (
           <p className="text-gray-500 text-center py-8">No jobs found matching &quot;{searchQuery}&quot;</p>
         ) : (
-          filteredJobs.map((job: any) => (
+          filteredJobs.map((job: { id: string | number; position: string; company: string; location: string; tags?: string[] }) => (
             <Link 
               href={`/jobs/${job.id}`} 
               key={job.id} 

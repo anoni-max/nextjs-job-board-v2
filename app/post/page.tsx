@@ -13,7 +13,7 @@ export default function PostJob() {
         <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Post a Job</h1>
           <p className="text-gray-600 mb-6 text-sm">
-            Reach thousands of qualified candidates. Fill out the form below and we'll review your listing.
+            Reach thousands of qualified candidates. Fill out the form below and we&apos;ll review your listing.
           </p>
 
           <form action="https://formspree.io/f/mzerdyzy" method="POST" className="space-y-4">

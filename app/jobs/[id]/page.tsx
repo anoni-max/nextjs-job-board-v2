@@ -4,7 +4,7 @@ import Image from "next/image";
 export default async function JobDetail({ params }: { params: { id: string } }) {
   const res = await fetch(`https://remoteok.com/api`, { next: { revalidate: 3600 } });
   const data = await res.json();
-  const job = data.find((j: any) => j.id == params.id);
+  const job = data.find((j: { id: string | number; position: string; company: string; location: string; url: string; description: string; tags?: string[] }) => j.id == params.id);
 
   if (!job) {
     return (
