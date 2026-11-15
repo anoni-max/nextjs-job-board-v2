@@ -52,7 +52,19 @@ export default function AdminDashboard() {
         </Link>
         
         <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
-          <h1 className="text-2xl font-bold mb-6">Admin: Post a Local Job</h1>
+                    <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Admin: Post a Local Job</h1>
+            <button 
+              onClick={() => { 
+                // This deletes the cookie and forces a reload
+                document.cookie = "admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"; 
+                window.location.href = "/login"; 
+              }} 
+              className="text-sm text-red-600 hover:underline font-bold bg-red-50 px-4 py-2 rounded-lg"
+            >
+              Log out
+            </button>
+          </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
