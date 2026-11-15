@@ -52,8 +52,8 @@ export default function AdminDashboard() {
         </Link>
         
         <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
-                    <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Admin: Post a Local Job</h1>
+              <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-extrabold text-gray-900">Post a Local Job</h1>
             <button 
               onClick={() => { 
                 // This deletes the cookie and forces a reload
