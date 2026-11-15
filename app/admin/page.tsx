@@ -14,22 +14,33 @@ export default function AdminDashboard() {
   });
 
   const [status, setStatus] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setIsSubmitting(true);
     setStatus("Saving...");
 
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    if (res.ok) {
-      setStatus("✅ Job posted successfully!");
-      setFormData({ title: "", company: "", location: "Remote", applyUrl: "", description: "", expiresInDays: 30 });
-    } else {
-      setStatus("❌ Failed to post job.");
+      if (res.ok) {
+        setStatus("✅ Job posted successfully!");
+        setFormData({ title: "", company: "", location: "Remote", applyUrl: "", description: "", expiresInDays: 30 });
+      } else {
+        const errorData = await res.json();
+        console.error(errorData);
+        setStatus("❌ Failed to post job. Check the console.");
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus("❌ Network error.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -53,7 +64,7 @@ export default function AdminDashboard() {
               <input required value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location (e.g., Nairobi, Remote)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
               <input required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
@@ -69,8 +80,8 @@ export default function AdminDashboard() {
               <textarea required rows={6} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
             </div>
             
-            <button type="submit" className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 transition">
-              Publish Job
+            <button type="submit" disabled={isSubmitting} className="w-full bg-blue-600 text-white font-medium py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-blue-400">
+              {isSubmitting ? "Publishing..." : "Publish Job"}
             </button>
           </form>
           
