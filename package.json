@@ -2,7 +2,7 @@
   "name": "nextjs-job-board",
   "version": "0.1.0",
   "private": true,
-   "scripts": {
+  "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "lucide-react": "^1.73.0",
     "next": "^15.1.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

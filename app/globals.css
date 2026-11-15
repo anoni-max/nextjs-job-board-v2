@@ -3,10 +3,11 @@
 @tailwind utilities;
 
 body {
-  color: #111827;
-  background-color: #f9fafb;
+  background-color: #f8fafc; /* Slate 50 */
+  color: #0f172a; /* Slate 900 */
 }
 
-input {
-  color: #111827;
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }
