@@ -17,3 +17,14 @@ model Job {
   expiresAt   DateTime
   createdAt   DateTime @default(now())
 }
+
+model Candidate {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String
+  skills        String
+  education     String
+  bio           String?
+  createdAt     DateTime @default(now())
+}

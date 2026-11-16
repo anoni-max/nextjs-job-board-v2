@@ -29,6 +29,8 @@ export default function RootLayout({
               <Link href="/" className="hover:text-blue-600 transition">Browse</Link>
               <Link href="/post" className="hover:text-blue-600 transition">Post a Job</Link>
               <Link href="/admin" className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition">Admin</Link>
+              <Link href="/join-talent" className="hover:text-blue-600 transition">Join Talent Pool</Link>
+              <Link href="/talent" className="hover:text-blue-600 transition">Browse Talent</Link>
             </div>
           </div>
         </nav>
