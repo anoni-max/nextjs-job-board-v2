@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to create candidate" }, { status: 500 });
   }
 }
+
 export async function GET() {
   try {
     const candidates = await prisma.candidate.findMany({
@@ -29,7 +26,6 @@ export async function GET() {
     });
     return NextResponse.json(candidates);
   } catch (error) {
-    console.error("Failed to fetch candidates:", error);
     return NextResponse.json({ error: "Failed to fetch candidates" }, { status: 500 });
   }
 }

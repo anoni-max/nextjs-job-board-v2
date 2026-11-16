@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
+import Navbar from "./components/Navbar";
+import MobileNav from "./components/MobileNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,26 +20,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-slate-50 flex flex-col`}>
         
-        {/* Navigation Bar */}
-        <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
-            <Link href="/" className="text-xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-              <span className="bg-blue-600 text-white p-1 rounded-md">💼</span> JobBoard
-            </Link>
-            <div className="flex gap-6 text-sm font-medium text-gray-600">
-              <Link href="/" className="hover:text-blue-600 transition">Browse</Link>
-              <Link href="/post" className="hover:text-blue-600 transition">Post a Job</Link>
-              <Link href="/admin" className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition">Admin</Link>
-              <Link href="/join-talent" className="hover:text-blue-600 transition">Join Talent Pool</Link>
-              <Link href="/talent" className="hover:text-blue-600 transition">Browse Talent</Link>
-            </div>
-          </div>
-        </nav>
+        <Navbar />
 
-        {/* Page Content */}
-        <main className="flex-grow">
+        {/* pb-16 adds padding to the bottom so the MobileNav doesn't cover content */}
+        <main className="flex-grow pb-16 md:pb-0">
           {children}
         </main>
+
+        <MobileNav />
 
       </body>
     </html>

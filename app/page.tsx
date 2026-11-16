@@ -1,13 +1,10 @@
 import HomeClient from "./HomeClient";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
-export default async function Home() {
+// Notice we defined searchParams as a Promise
+export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   let remoteJobs = [];
   try {
     const res = await fetch("https://remoteok.com/api", { cache: 'no-store' });
@@ -39,26 +36,58 @@ export default async function Home() {
 
   const allJobs = [...formattedLocalJobs, ...remoteJobs];
 
+  // THIS IS THE FIX: We must await the searchParams in Next.js 15
+  const resolvedParams = await searchParams;
+  const searchQuery = resolvedParams.q?.toLowerCase() || "";
+  
+  const filteredJobs = allJobs.filter((job) => {
+    return (
+      job.position?.toLowerCase().includes(searchQuery) ||
+      job.company?.toLowerCase().includes(searchQuery) ||
+      job.location?.toLowerCase().includes(searchQuery)
+    );
+  });
+
   return (
     <main className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-24 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-            Find your next <span className="text-blue-300">dream job</span>.
-          </h1>
-          <p className="text-lg text-blue-100 mb-10 max-w-xl mx-auto">
-            Discover thousands of remote and local opportunities. Your future starts here.
-          </p>
-          
-          {/* The search bar lives here visually via the HomeClient */}
+      <section className="bg-white border-b border-gray-200 py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900">Latest Jobs</h1>
+          <p className="text-gray-500 text-sm mt-1">Discover remote and local opportunities</p>
         </div>
       </section>
 
-      {/* Main Content Area */}
-      <section className="max-w-3xl mx-auto px-4 py-12 -mt-8 relative z-10">
-        <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
-           <HomeClient jobs={allJobs} />
+      <section className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <HomeClient jobs={filteredJobs} />
+            </div>
+          </div>
+
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 h-fit">
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Featured Talent</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Looking to hire? Browse our pool of pre-vetted candidates ready to work.
+              </p>
+              <a href="/talent" className="block text-center w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition">
+                Browse Talent Pool
+              </a>
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+              <h3 className="text-lg font-bold mb-2">Have a role to fill?</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Reach thousands of local and remote workers. Post your job today.
+              </p>
+              <a href="/post" className="block text-center w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                Post a Job
+              </a>
+            </div>
+          </div>
+          
         </div>
       </section>
     </main>

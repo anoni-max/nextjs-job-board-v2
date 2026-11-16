@@ -1,50 +1,23 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, MapPin, Briefcase } from "lucide-react";
+import { MapPin, Briefcase } from "lucide-react";
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredJobs = jobs.filter((job) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      job.position?.toLowerCase().includes(query) ||
-      job.company?.toLowerCase().includes(query) ||
-      job.location?.toLowerCase().includes(query)
-    );
-  });
-
   return (
     <div className="w-full">
-      {/* Search Bar */}
-      <div className="relative mb-8">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search jobs by title, company, or location..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-gray-900 text-lg"
-        />
-      </div>
-
-      {/* Job Cards */}
       <div className="space-y-4">
-        {filteredJobs.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-            <p className="text-gray-500 text-lg">No jobs found matching &quot;{searchQuery}&quot;</p>
+        {jobs.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No jobs found.</p>
           </div>
         ) : (
-          filteredJobs.map((job: any) => (
+          jobs.map((job: any) => (
             <Link 
               href={`/jobs/${job.id}`} 
               key={job.id} 
-              className="block bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition duration-200 group"
+              className="block bg-white p-6 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition duration-200 group"
             >
               <div className="flex items-start gap-4">
                 <Image 

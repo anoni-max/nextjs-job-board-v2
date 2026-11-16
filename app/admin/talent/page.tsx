@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone, GraduationCap, Code, Lock } from "lucide-react";
+import { ArrowLeft, Mail, Phone, GraduationCap, Code } from "lucide-react";
 
 export default function AdminTalent() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function AdminTalent() {
     }
   }, [router]);
 
-  // 2. Fetch Candidates
+  // 2. Fetch Candidates from the API
   useEffect(() => {
     async function fetchCandidates() {
       try {
