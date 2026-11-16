@@ -1,10 +1,9 @@
 import HomeClient from "./HomeClient";
 import { prisma } from "@/lib/prisma";
-import { fetchArbeitnowJobs } from "@/lib/arbeitnow";
+import StatsHeader from "./components/StatsHeader";
 
 export const dynamic = "force-dynamic";
 
-// Notice we defined searchParams as a Promise
 export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   let remoteJobs = [];
   try {
@@ -13,12 +12,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     remoteJobs = Array.isArray(data) ? data.slice(1, 20) : [];
   } catch (error) {
     console.error("Failed to fetch remote jobs:", error);
-  }
-    let arbeitnowJobs = [];
-  try {
-    arbeitnowJobs = await fetchArbeitnowJobs();
-  } catch (error) {
-    console.error("Failed to fetch Arbeitnow jobs:", error);
   }
 
   let localJobs = [];
@@ -41,9 +34,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     tags: ["Local", "Featured"],
   }));
 
-    const allJobs = [...formattedLocalJobs, ...remoteJobs, ...arbeitnowJobs];
+  const allJobs = [...formattedLocalJobs, ...remoteJobs];
 
-  // THIS IS THE FIX: We must await the searchParams in Next.js 15
   const resolvedParams = await searchParams;
   const searchQuery = resolvedParams.q?.toLowerCase() || "";
   
@@ -57,24 +49,30 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   return (
     <main className="min-h-screen">
-      <section className="bg-white border-b border-gray-200 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Latest Jobs</h1>
-          <p className="text-gray-500 text-sm mt-1">Discover remote and local opportunities</p>
-        </div>
-      </section>
+      
+      {/* Sticky Stats Header */}
+      <StatsHeader 
+        title="Latest Jobs" 
+        subtitle="Discover remote and local opportunities" 
+        count={allJobs.length} 
+        countLabel="Active Jobs"
+      />
 
+      {/* Main Two-Column Grid */}
       <section className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-           {/* Left Column: Jobs List */}
+          {/* Left Column: Jobs List */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <HomeClient jobs={filteredJobs} />
             </div>
           </div>
 
-          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 h-fit">
+          {/* Right Column: Sticky Sidebar */}
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-36 h-fit">
+            
+            {/* Sidebar Box 1: Featured Talent */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Featured Talent</h3>
               <p className="text-sm text-gray-600 mb-4">
@@ -85,6 +83,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               </a>
             </div>
 
+            {/* Sidebar Box 2: Post a Job */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-bold mb-2">Have a role to fill?</h3>
               <p className="text-gray-600 text-sm mb-4">
@@ -94,8 +93,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
                 Post a Job
               </a>
             </div>
+
           </div>
-          
         </div>
       </section>
     </main>
