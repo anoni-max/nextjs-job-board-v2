@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
+import { Suspense } from "react"; // <-- Import Suspense
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +21,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} min-h-screen bg-slate-50 flex flex-col`}>
         
-        <Navbar />
+        {/* Wrap Navbar in Suspense so Vercel can build the page */}
+        <Suspense fallback={<div className="h-16 bg-white border-b border-gray-200"></div>}>
+          <Navbar />
+        </Suspense>
 
-        {/* pb-16 adds padding to the bottom so the MobileNav doesn't cover content */}
         <main className="flex-grow pb-16 md:pb-0">
           {children}
         </main>
