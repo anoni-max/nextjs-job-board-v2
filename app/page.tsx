@@ -1,5 +1,6 @@
 import HomeClient from "./HomeClient";
 import { prisma } from "@/lib/prisma";
+import { fetchArbeitnowJobs } from "@/lib/arbeitnow";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     remoteJobs = Array.isArray(data) ? data.slice(1, 20) : [];
   } catch (error) {
     console.error("Failed to fetch remote jobs:", error);
+  }
+    let arbeitnowJobs = [];
+  try {
+    arbeitnowJobs = await fetchArbeitnowJobs();
+  } catch (error) {
+    console.error("Failed to fetch Arbeitnow jobs:", error);
   }
 
   let localJobs = [];
@@ -34,7 +41,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     tags: ["Local", "Featured"],
   }));
 
-  const allJobs = [...formattedLocalJobs, ...remoteJobs];
+    const allJobs = [...formattedLocalJobs, ...remoteJobs, ...arbeitnowJobs];
 
   // THIS IS THE FIX: We must await the searchParams in Next.js 15
   const resolvedParams = await searchParams;

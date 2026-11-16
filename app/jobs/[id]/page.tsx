@@ -1,11 +1,15 @@
 import Link from "next/link";
+import { fetchArbeitnowJobs } from "@/lib/arbeitnow";
 
 export default async function JobDetail({ params }: { params: { id: string } }) {
-  const res = await fetch(`https://remoteok.com/api`, { next: { revalidate: 3600 } });
+    const res = await fetch(`https://remoteok.com/api`, { next: { revalidate: 3600 } });
   const data = await res.json();
   
-  // Find the job, and convert ID to string to ensure it matches
-  const job = data.find((j: any) => String(j.id) === String(params.id));
+  // Fetch Arbeitnow jobs too
+  const arbeitnowData = await fetchArbeitnowJobs();
+  
+  // Find the job in either dataset
+  const job = data.find((j: any) => j.id == params.id) || arbeitnowData.find((j: any) => j.id == params.id);
 
   if (!job) {
     return (
