@@ -67,8 +67,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
       <section className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
+           {/* Left Column: Jobs List */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <HomeClient jobs={filteredJobs} />
             </div>
           </div>
