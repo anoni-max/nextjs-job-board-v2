@@ -53,35 +53,35 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
               className="group flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-100 hover:bg-slate-50 transition-colors"
             >
               
-              {/* Left Side: Logo and Details */}
-              <div className="flex items-start gap-4 flex-1 pr-4">
+              {/* Left Side: Logo, Title, Company, Location+Tags */}
+              <div className="flex items-start md:items-center gap-4 flex-1 min-w-0">
                 <Image 
                   src={`https://logo.clearbit.com/${job.company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`} 
                   alt={job.company}
                   width={48}
                   height={48}
                   unoptimized
-                  className="rounded-full object-contain bg-white border border-gray-200 p-1 shrink-0 mt-1"
+                  className="rounded-full object-contain bg-white border border-gray-200 p-1 shrink-0 mt-1 md:mt-0"
                   onError={(e) => {
                     e.currentTarget.src = `https://ui-avatars.com/api/?name=${job.company}&background=random&color=fff`;
                   }}
                 />
                 
-                <div className="flex-1">
-                  {/* Title - Full display, no truncate */}
-                  <h2 className="text-[17px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-snug">
+                <div className="flex-1 min-w-0">
+                  {/* Title - Forced to single line with truncate */}
+                  <h2 className="text-[17px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                     {job.position}
                   </h2>
                   
-                  {/* Company */}
-                  <p className="text-gray-500 text-sm mt-1">{job.company}</p>
+                  {/* Company - Single line */}
+                  <p className="text-gray-500 text-sm mt-0.5 truncate">{job.company}</p>
                   
                   {/* Location + Skills on the same line */}
-                  <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     {/* Location Pill */}
                     <div className="bg-slate-100 px-2.5 py-1 rounded-md flex items-center gap-1 border border-slate-200 text-xs text-gray-600">
                       <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{job.location || "Remote"}</span>
+                      <span className="truncate max-w-[150px]">{job.location || "Remote"}</span>
                     </div>
 
                     {/* Tags */}
@@ -95,12 +95,14 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
               </div>
 
               {/* Right Side: Time & Apply Button */}
-              <div className="flex items-center justify-between md:justify-end gap-6 mt-4 md:mt-0 shrink-0 md:pl-4">
-                <div className="flex items-center gap-1 text-xs text-gray-400 font-medium md:block hidden">
-                  <Clock className="w-3.5 h-3.5 inline mr-1" />
+              <div className="flex items-center justify-end gap-4 mt-4 md:mt-0 shrink-0 md:ml-4 w-full md:w-auto">
+                {/* Hides the "New" text on mobile so it doesn't stretch the button */}
+                <div className="hidden md:flex items-center gap-1 text-xs text-gray-400 font-medium mr-auto md:mr-0">
+                  <Clock className="w-3.5 h-3.5" />
                   <span>New</span>
                 </div>
-                <div className="bg-blue-600 text-white text-sm font-semibold px-6 py-2 rounded-lg group-hover:bg-blue-700 transition shadow-sm w-full md:w-auto text-center">
+                {/* The Apply Button - smaller padding on mobile */}
+                <div className="bg-blue-600 text-white text-sm font-semibold px-6 py-1.5 md:px-6 md:py-2 rounded-lg group-hover:bg-blue-700 transition shadow-sm">
                   Apply
                 </div>
               </div>
