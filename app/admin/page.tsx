@@ -16,6 +16,8 @@ export default function AdminDashboard() {
   }, [router]);
 
   const [magicText, setMagicText] = useState("");
+  const [drafts, setDrafts] = useState<any[]>([]);
+  
   const [formData, setFormData] = useState({
     title: "",
     company: "",
@@ -28,28 +30,51 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch Draft Jobs
+  const fetchDrafts = async () => {
+    try {
+      const res = await fetch("/api/jobs/drafts");
+      if (res.ok) {
+        const data = await res.json();
+        setDrafts(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch drafts");
+    }
+  };
+
+  useEffect(() => {
+    fetchDrafts();
+  }, []);
+
+  async function approveJob(id: string) {
+    try {
+      await fetch("/api/jobs/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      fetchDrafts(); // Refresh the list
+    } catch (error) {
+      console.error("Failed to approve");
+    }
+  }
+
   // 🪄 THE MAGIC AI PARSER
   function handleMagicPaste() {
     if (!magicText.trim()) return;
 
     const lines = magicText.split("\n").map(l => l.trim()).filter(l => l !== "");
     
-    // 1. Company is usually the first line
     const company = lines[0] || "";
-    
-    // 2. Title is usually the second line
     const title = lines[1] || "";
     
-    // 3. Try to find a location keyword or just use the third line
     let location = lines[2] || "Nairobi, Kenya";
     if (location.toLowerCase().includes("full-time") || location.toLowerCase().includes("part-time")) {
-       location = "Kenya"; // fallback if line 3 is job type
+       location = "Kenya"; 
     }
 
-    // 4. The rest is the description
     const description = lines.slice(3).join("\n\n");
-
-    // 5. Auto-generate a Google search link as a fallback apply URL
     const applyUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " " + company + " jobs Kenya")}`;
 
     setFormData({
@@ -61,7 +86,7 @@ export default function AdminDashboard() {
       applyUrl,
     });
     
-    setMagicText(""); // Clear the magic box
+    setMagicText("");
     setStatus("✨ Fields auto-filled! Review them below.");
   }
 
@@ -101,7 +126,7 @@ export default function AdminDashboard() {
           
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-2xl font-extrabold text-gray-900">Admin: Post a Local Job</h1>
+            <h1 className="text-2xl font-extrabold text-gray-900">Admin: Post a Job</h1>
             
             <div className="flex items-center gap-3">
               <Link 
@@ -122,6 +147,31 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Draft Queue */}
+          {drafts.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl mb-8">
+              <h2 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
+                ⚠️ Pending Approval ({drafts.length})
+              </h2>
+              <div className="space-y-3">
+                {drafts.map((draft) => (
+                  <div key={draft.id} className="bg-white p-4 rounded-lg border border-amber-100 flex justify-between items-center shadow-sm">
+                    <div>
+                      <h3 className="font-bold text-gray-900">{draft.title}</h3>
+                      <p className="text-sm text-gray-500">{draft.company} · {draft.location}</p>
+                    </div>
+                    <button
+                      onClick={() => approveJob(draft.id)}
+                      className="bg-amber-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-amber-600 transition shadow-sm"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 🪄 MAGIC PASTE SECTION */}
           <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-xl mb-8">
@@ -168,7 +218,7 @@ export default function AdminDashboard() {
               <input type="number" required value={formData.expiresInDays} onChange={e => setFormData({...formData, expiresInDays: Number(e.target.value)})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Job Description (HTML allowed)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job Description</label>
               <textarea required rows={8} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"></textarea>
             </div>
             

@@ -16,9 +16,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   let localJobs = [];
   try {
-    localJobs = await prisma.job.findMany({
-      where: { expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: "desc" },
+        localJobs = await prisma.job.findMany({
+      where: { 
+        expiresAt: { gt: new Date() },
+        isApproved: true // <-- ADD THIS
+      },
     });
   } catch (error) {
     console.error("Failed to fetch local jobs:", error);

@@ -15,6 +15,7 @@ model Job {
   description String
   applyUrl    String
   expiresAt   DateTime
+  isApproved  Boolean  @default(false) // <-- ADD THIS LINE
   createdAt   DateTime @default(now())
 }
 
