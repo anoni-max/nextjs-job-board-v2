@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { MapPin, Clock } from "lucide-react";
+import { MapPin, Clock, BadgeCheck } from "lucide-react";
 import { useState } from "react";
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
@@ -73,8 +73,15 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                     {job.position}
                   </h2>
                   
-                  {/* Company - Single line */}
-                  <p className="text-gray-500 text-sm mt-0.5 truncate">{job.company}</p>
+                  {/* Company + Verified badge */}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-gray-500 text-sm truncate">{job.company}</p>
+                    {job.verified && (
+                      <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                        <BadgeCheck className="w-3.5 h-3.5" /> Verified
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Location + Skills on the same line */}
                   <div className="flex flex-wrap items-center gap-2 mt-2">
