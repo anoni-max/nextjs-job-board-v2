@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const drafts = await prisma.job.findMany({
-      where: { isApproved: false },
+      where: { isApproved: false, rejected: false },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(drafts);

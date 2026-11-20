@@ -6,11 +6,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const { id } = await req.json();
-    
-    // Update the job to isApproved = true
+
     const updatedJob = await prisma.job.update({
       where: { id },
-      data: { isApproved: true },
+      data: { isApproved: true, rejected: false, publishedAt: new Date() },
     });
 
     return NextResponse.json(updatedJob);

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     expiresAt.setDate(expiresAt.getDate() + Number(expiresInDays));
 
     const newJob = await prisma.job.create({
-      data: { title, company, location, description, applyUrl, expiresAt },
+      data: { title, company, location, description, applyUrl, expiresAt, isApproved: true },
     });
 
     return NextResponse.json(newJob, { status: 201 });
