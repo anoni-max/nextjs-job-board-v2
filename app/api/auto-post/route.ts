@@ -1,47 +1,78 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { parseJobEmail } from "@/lib/fikra";
 
-export const dynamic = "force-dynamic";
+interface IncomingEmail {
+  from?: string;
+  subject?: string;
+  body?: string;
+  messageId?: string;
+  receivedAt?: string;
+}
 
-export async function POST(req: Request) {
-  try {
-    // 1. Authenticate the request (Security)
-    const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.AUTO_POST_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+const DEFAULT_EXPIRY_DAYS = 30;
 
-    // 2. Get the raw text
-    const body = await req.json();
-    const { rawText } = body;
-
-    if (!rawText) {
-      return NextResponse.json({ error: "No text provided" }, { status: 400 });
-    }
-
-    /* 
-      TODO: In the next step, we will plug OpenAI in here to parse the rawText.
-      For now, we will use a basic placeholder so you can test the flow.
-    */
-    const parsedJob = {
-      title: "Test AI Job Title",
-      company: "Test AI Company",
-      location: "Remote",
-      description: rawText, // We will dump the raw text for now
-      applyUrl: "https://google.com",
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      isApproved: false, // Saved as a draft!
-    };
-
-    // 3. Save to Database
-    const newJob = await prisma.job.create({
-      data: parsedJob,
-    });
-
-    return NextResponse.json({ success: true, job: newJob }, { status: 201 });
-
-  } catch (error) {
-    console.error("Auto-post failed:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+export async function POST(req: NextRequest) {
+  const secret = req.headers.get("x-auto-post-secret");
+  if (!secret || secret !== process.env.AUTO_POST_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  let email: IncomingEmail;
+  try {
+    email = (await req.json()) as IncomingEmail;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (!email.body || email.body.trim().length === 0) {
+    return NextResponse.json({ error: "Empty email body" }, { status: 400 });
+  }
+
+  if (email.messageId) {
+    const existing = await prisma.job.findUnique({
+      where: { sourceEmailId: email.messageId },
+    });
+    if (existing) {
+      return NextResponse.json({ skipped: true, reason: "duplicate" });
+    }
+  }
+
+  const rawText = [
+    email.subject ? `Subject: ${email.subject}` : "",
+    email.from ? `From: ${email.from}` : "",
+    "",
+    email.body,
+  ].join("\n");
+
+  let parsed;
+  try {
+    parsed = await parseJobEmail(rawText);
+  } catch (e) {
+    console.error("AI parse failed:", e);
+    return NextResponse.json({ error: "AI parse failed" }, { status: 502 });
+  }
+
+  if (!parsed || parsed.isJob === false || !parsed.title || !parsed.company) {
+    return NextResponse.json({ skipped: true, reason: "not-a-job" });
+  }
+
+  const job = await prisma.job.create({
+    data: {
+      title: parsed.title,
+      company: parsed.company,
+      location: parsed.location || "Remote",
+      description: parsed.description || "",
+      applyUrl: parsed.applyUrl || "",
+      expiresAt: new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
+      salary: parsed.salary || null,
+      employmentType: parsed.employmentType || null,
+      sourceEmailId: email.messageId || null,
+      rawEmail: rawText,
+      isApproved: false,
+      rejected: false,
+    },
+  });
+
+  return NextResponse.json({ created: true, jobId: job.id, title: job.title });
 }
