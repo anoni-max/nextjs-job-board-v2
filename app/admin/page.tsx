@@ -2,21 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Wand2 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const router = useRouter();
-
-  useEffect(() => {
-    const hasToken = document.cookie.includes("admin_token=secret123");
-    if (!hasToken) {
-      router.push("/login");
-    }
-  }, [router]);
-
   const [magicText, setMagicText] = useState("");
   const [drafts, setDrafts] = useState<any[]>([]);
+  const [rejectedJobs, setRejectedJobs] = useState<any[]>([]);
+  const [editingJob, setEditingJob] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<any>({});
 
   const [formData, setFormData] = useState({
     title: "",
@@ -30,7 +23,6 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch Draft Jobs
   const fetchDrafts = async () => {
     try {
       const res = await fetch("/api/jobs/drafts");
@@ -43,8 +35,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchRejected = async () => {
+    try {
+      const res = await fetch("/api/jobs/rejected");
+      if (res.ok) {
+        const data = await res.json();
+        setRejectedJobs(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch rejected jobs");
+    }
+  };
+
   useEffect(() => {
     fetchDrafts();
+    fetchRejected();
   }, []);
 
   async function approveJob(id: string) {
@@ -54,7 +59,7 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      fetchDrafts(); // Refresh the list
+      fetchDrafts();
     } catch (error) {
       console.error("Failed to approve");
     }
@@ -67,13 +72,92 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      fetchDrafts(); // Refresh the list
+      fetchDrafts();
+      fetchRejected();
     } catch (error) {
       console.error("Failed to reject");
     }
   }
 
-  // 🪄 THE MAGIC AI PARSER
+  async function restoreJob(id: string) {
+    try {
+      await fetch("/api/jobs/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      fetchRejected();
+      fetchDrafts();
+    } catch (error) {
+      console.error("Failed to restore");
+    }
+  }
+
+  async function deleteJob(id: string) {
+    if (!confirm("Permanently delete this job? This cannot be undone.")) return;
+    try {
+      await fetch("/api/jobs/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      fetchRejected();
+    } catch (error) {
+      console.error("Failed to delete");
+    }
+  }
+
+  function openEdit(job: any) {
+    setEditForm({
+      id: job.id,
+      title: job.title || "",
+      company: job.company || "",
+      location: job.location || "",
+      description: job.description || "",
+      applyUrl: job.applyUrl || "",
+      salary: job.salary || "",
+      employmentType: job.employmentType || "",
+      positions: job.positions || "",
+      qualifications: job.qualifications || "",
+      responsibilities: job.responsibilities || "",
+      deadline: job.expiresAt ? new Date(job.expiresAt).toISOString().slice(0, 10) : "",
+    });
+    setEditingJob(job);
+  }
+
+  async function saveEdit() {
+    try {
+      await fetch("/api/jobs/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      setEditingJob(null);
+      fetchDrafts();
+    } catch (error) {
+      console.error("Failed to update");
+    }
+  }
+
+  async function saveEditAndApprove() {
+    try {
+      await fetch("/api/jobs/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      await fetch("/api/jobs/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editForm.id }),
+      });
+      setEditingJob(null);
+      fetchDrafts();
+    } catch (error) {
+      console.error("Failed to save & approve");
+    }
+  }
+
   function handleMagicPaste() {
     if (!magicText.trim()) return;
 
@@ -150,8 +234,8 @@ export default function AdminDashboard() {
               </Link>
 
               <button
-                onClick={() => {
-                  document.cookie = "admin_token=; max-age=0";
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
                   window.location.href = "/login";
                 }}
                 className="text-sm text-red-600 hover:underline font-bold bg-red-50 px-4 py-2 rounded-lg"
@@ -161,7 +245,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Draft Queue */}
+          {/* Pending Queue */}
           {drafts.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 p-5 rounded-xl mb-8">
               <h2 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
@@ -169,23 +253,64 @@ export default function AdminDashboard() {
               </h2>
               <div className="space-y-3">
                 {drafts.map((draft) => (
-                  <div key={draft.id} className="bg-white p-4 rounded-lg border border-amber-100 flex justify-between items-center shadow-sm">
+                  <div key={draft.id} className="bg-white p-4 rounded-lg border border-amber-100 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-bold text-gray-900">{draft.title}</h3>
+                        <p className="text-sm text-gray-500">{draft.company} · {draft.location}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEdit(draft)}
+                          className="bg-blue-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-600 transition shadow-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => approveJob(draft.id)}
+                          className="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => rejectJob(draft.id)}
+                          className="bg-red-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-red-600 transition shadow-sm"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rejected Queue */}
+          {rejectedJobs.length > 0 && (
+            <div className="bg-red-50 border border-red-200 p-5 rounded-xl mb-8">
+              <h2 className="text-sm font-bold text-red-900 mb-3 flex items-center gap-2">
+                🗑️ Rejected ({rejectedJobs.length})
+              </h2>
+              <div className="space-y-3">
+                {rejectedJobs.map((job) => (
+                  <div key={job.id} className="bg-white p-4 rounded-lg border border-red-100 flex justify-between items-center shadow-sm">
                     <div>
-                      <h3 className="font-bold text-gray-900">{draft.title}</h3>
-                      <p className="text-sm text-gray-500">{draft.company} · {draft.location}</p>
+                      <h3 className="font-bold text-gray-900">{job.title}</h3>
+                      <p className="text-sm text-gray-500">{job.company} · {job.location}</p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => approveJob(draft.id)}
-                        className="bg-green-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm"
+                        onClick={() => restoreJob(job.id)}
+                        className="bg-gray-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-gray-700 transition shadow-sm"
                       >
-                        Approve
+                        Restore
                       </button>
                       <button
-                        onClick={() => rejectJob(draft.id)}
-                        className="bg-red-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-red-600 transition shadow-sm"
+                        onClick={() => deleteJob(job.id)}
+                        className="bg-red-600 text-white font-bold px-4 py-2 rounded-lg hover:bg-red-700 transition shadow-sm"
                       >
-                        Reject
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -194,7 +319,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 🪄 MAGIC PASTE SECTION */}
+          {/* Magic Paste */}
           <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-xl mb-8">
             <h2 className="text-sm font-bold text-indigo-900 mb-2 flex items-center gap-2">
               <Wand2 className="w-4 h-4" /> Magic Paste (Auto-fill)
@@ -251,6 +376,68 @@ export default function AdminDashboard() {
           {status && <p className="mt-4 text-center font-medium">{status}</p>}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingJob && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-extrabold text-gray-900 mb-4">Edit Job</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <input value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                  <input value={editForm.company} onChange={e => setEditForm({...editForm, company: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input value={editForm.location} onChange={e => setEditForm({...editForm, location: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Salary</label>
+                  <input value={editForm.salary} onChange={e => setEditForm({...editForm, salary: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
+                  <input value={editForm.employmentType} onChange={e => setEditForm({...editForm, employmentType: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Positions</label>
+                  <input value={editForm.positions} onChange={e => setEditForm({...editForm, positions: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                  <input type="date" value={editForm.deadline} onChange={e => setEditForm({...editForm, deadline: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apply URL</label>
+                  <input value={editForm.applyUrl} onChange={e => setEditForm({...editForm, applyUrl: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea rows={3} value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Responsibilities (one per line)</label>
+                <textarea rows={4} value={editForm.responsibilities} onChange={e => setEditForm({...editForm, responsibilities: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Qualifications (one per line)</label>
+                <textarea rows={4} value={editForm.qualifications} onChange={e => setEditForm({...editForm, qualifications: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button onClick={() => setEditingJob(null)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-bold hover:bg-gray-100">Cancel</button>
+              <button onClick={saveEdit} className="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">Save Changes</button>
+              <button onClick={saveEditAndApprove} className="px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700">Save & Approve</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

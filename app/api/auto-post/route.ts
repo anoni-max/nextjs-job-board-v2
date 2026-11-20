@@ -12,6 +12,12 @@ interface IncomingEmail {
 
 const DEFAULT_EXPIRY_DAYS = 30;
 
+function parseDate(value?: string): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-auto-post-secret");
   if (!secret || secret !== process.env.AUTO_POST_SECRET) {
@@ -57,16 +63,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "not-a-job" });
   }
 
+  const deadline = parseDate(parsed.deadline);
+
   const job = await prisma.job.create({
     data: {
       title: parsed.title,
       company: parsed.company,
-      location: parsed.location || "Remote",
+      location: parsed.location || "Kenya",
       description: parsed.description || "",
       applyUrl: parsed.applyUrl || "",
-      expiresAt: new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
+      expiresAt: deadline || new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
       salary: parsed.salary || null,
       employmentType: parsed.employmentType || null,
+      positions: parsed.positions || null,
+      postedDate: parseDate(parsed.postedDate),
+      qualifications: parsed.qualifications || null,
+      responsibilities: parsed.responsibilities || null,
       sourceEmailId: email.messageId || null,
       rawEmail: rawText,
       isApproved: false,
