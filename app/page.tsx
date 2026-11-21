@@ -36,7 +36,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     url: job.applyUrl,
     tags: ["Local", "Featured"],
     verified: true,
-    postedAt: job.publishedAt || job.createdAt,
+    postedAt: (job.publishedAt || job.createdAt).getTime(),
   }));
 
   const allJobs = [...formattedLocalJobs, ...remoteJobs];
