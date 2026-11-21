@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
+import Footer from "./components/Footer";
 import { Suspense } from "react";
 import { SessionProvider } from "next-auth/react";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
             {children}
           </main>
 
+          <Footer />
           <MobileNav />
         </SessionProvider>
       </body>
