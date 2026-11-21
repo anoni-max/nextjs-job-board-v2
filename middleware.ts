@@ -1,17 +1,24 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    const token = request.cookies.get('admin_token')?.value;
-    const valid = process.env.ADMIN_TOKEN && token === process.env.ADMIN_TOKEN;
-    if (!valid) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+export default auth((req) => {
+  const isAdminPage = req.nextUrl.pathname.startsWith("/admin");
+  if (!isAdminPage) return NextResponse.next();
+
+  // Old password login (backup)
+  const adminToken = req.cookies.get("admin_token")?.value;
+  const tokenValid = process.env.ADMIN_TOKEN && adminToken === process.env.ADMIN_TOKEN;
+
+  // Signed-in admin email
+  const email = (req as any).auth?.user?.email;
+  const isAdminEmail = process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL;
+
+  if (!tokenValid && !isAdminEmail) {
+    return NextResponse.redirect(new URL("/login", req.url));
   }
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: '/admin/:path*',
+  matcher: "/admin/:path*",
 };

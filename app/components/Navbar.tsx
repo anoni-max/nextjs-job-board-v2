@@ -1,84 +1,73 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, Home, Users, Briefcase, Shield, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
 
 export default function Navbar() {
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get("q") || "");
+  const [query, setQuery] = useState("");
 
-  const handleSearch = (e: React.FormEvent) => {
+  const isAdmin = (session?.user as any)?.isAdmin === true;
+
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (query.trim()) {
-      router.push(`/?q=${encodeURIComponent(query)}`);
-    } else {
-      router.push("/");
-    }
-  };
-
-  const navItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Talent Pool", href: "/talent", icon: Users },
-    { name: "Post a Job", href: "/post", icon: Briefcase },
-    { name: "Admin", href: "/admin", icon: Shield },
-  ];
+    router.push(`/?q=${encodeURIComponent(query)}`);
+  }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-2 md:gap-4">
-        
-        {/* Left: Logo */}
-        <Link href="/" className="text-2xl font-extrabold text-blue-600 tracking-tighter shrink-0">
-          JobBoard
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 h-16">
+      <div className="max-w-6xl mx-auto px-4 h-full flex items-center gap-4">
+        <Link href="/" className="text-xl font-extrabold text-gray-900 shrink-0">
+          Kazi<span className="text-blue-600">Spot</span>
         </Link>
 
-        {/* Middle: Search Bar (Takes up remaining space on mobile) */}
-        <form onSubmit={handleSearch} className="relative flex-1 max-w-lg">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+        <form onSubmit={handleSearch} className="flex-1 min-w-0 md:flex-none md:w-80">
           <input
-            type="text"
-            placeholder="Search..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-gray-100 text-sm text-gray-900 rounded-full py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search jobs..."
+            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
           />
         </form>
 
-        {/* Right: Desktop Navigation (Hidden on Mobile) */}
-        <div className="hidden md:flex items-center gap-6">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex flex-col items-center justify-center py-1 text-xs font-medium transition-colors border-b-2 ${
-                  isActive 
-                    ? "text-gray-900 border-gray-900" 
-                    : "text-gray-500 border-transparent hover:text-gray-900"
-                }`}
-              >
-                <Icon className="w-5 h-5 mb-1" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
+        <div className="hidden md:flex items-center gap-4 ml-auto shrink-0">
+          <nav className="flex items-center gap-4">
+            <Link href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">Jobs</Link>
+            <Link href="/talent" className="text-sm font-medium text-gray-600 hover:text-gray-900">Talent</Link>
+            <Link href="/post" className="text-sm font-medium text-gray-600 hover:text-gray-900">Post a Job</Link>
+          </nav>
 
-        {/* Right: Mobile Icons (Hidden on Desktop) */}
-        <div className="flex md:hidden items-center gap-4 shrink-0">
-           <button className="text-gray-500 hover:text-gray-900">
-             <MessageSquare className="w-6 h-6" />
-           </button>
-        </div>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="text-sm font-semibold text-blue-600 border border-blue-200 px-4 py-1.5 rounded-lg hover:bg-blue-50 whitespace-nowrap"
+            >
+              Admin
+            </Link>
+          )}
 
+          {status === "loading" ? (
+            <span className="text-sm text-gray-400">…</span>
+          ) : session?.user ? (
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-sm font-medium text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              href="/signin"
+              className="text-sm font-semibold text-gray-700 border border-gray-300 px-4 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+            >
+              Sign in
+            </Link>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

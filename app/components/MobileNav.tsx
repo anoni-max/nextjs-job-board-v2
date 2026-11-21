@@ -2,40 +2,73 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, PlusSquare, Shield, Briefcase } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { Home, Users, PlusCircle, Lock, LogIn, LogOut } from "lucide-react";
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const isAdmin = (session?.user as any)?.isAdmin === true;
 
   const items = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Talent", href: "/talent", icon: Users },
-    { name: "Post", href: "/post", icon: PlusSquare },
-    { name: "Admin", href: "/admin", icon: Shield },
-    { name: "Jobs", href: "/", icon: Briefcase }, 
+    { href: "/", label: "Jobs", icon: Home },
+    { href: "/talent", label: "Talent", icon: Users },
+    { href: "/post", label: "Post", icon: PlusCircle },
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 z-50 pb-safe">
-      <div className="flex justify-around items-center h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="flex justify-around items-stretch">
         {items.map((item) => {
-          const isActive = pathname === item.href;
           const Icon = item.icon;
-          
+          const active = pathname === item.href;
           return (
-            <Link 
-              key={item.name} 
-              href={item.href} 
-              className="flex flex-col items-center justify-center w-full h-full space-y-1"
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-col items-center py-2 px-2 text-xs font-medium ${
+                active ? "text-blue-600" : "text-gray-500"
+              }`}
             >
-              <Icon className={`w-6 h-6 ${isActive ? "text-gray-900" : "text-gray-500"}`} />
-              <span className={`text-[10px] ${isActive ? "text-gray-900 font-semibold" : "text-gray-500 font-medium"}`}>
-                {item.name}
-              </span>
+              <Icon className="w-5 h-5" />
+              <span className="mt-0.5">{item.label}</span>
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={`flex flex-col items-center py-2 px-2 text-xs font-medium ${
+              pathname === "/admin" ? "text-blue-600" : "text-gray-500"
+            }`}
+          >
+            <Lock className="w-5 h-5" />
+            <span className="mt-0.5">Admin</span>
+          </Link>
+        )}
+
+        {session?.user ? (
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex flex-col items-center py-2 px-2 text-xs font-medium text-gray-500"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="mt-0.5">Sign out</span>
+          </button>
+        ) : (
+          <Link
+            href="/signin"
+            className={`flex flex-col items-center py-2 px-2 text-xs font-medium ${
+              pathname === "/signin" ? "text-blue-600" : "text-gray-500"
+            }`}
+          >
+            <LogIn className="w-5 h-5" />
+            <span className="mt-0.5">Sign in</span>
+          </Link>
+        )}
       </div>
-    </div>
+    </nav>
   );
 }
