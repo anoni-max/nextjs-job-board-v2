@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 const socials = [
-  { label: "WhatsApp", href: "https://whatsapp.com/channel/0029Vb9lSs@FSAt5o20KvL1Q", color: "bg-[#25D366]" },
+  { label: "WhatsApp", href: "https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q", color: "bg-[#25D366]" },
   { label: "Telegram", href: "https://t.me/kazispot", color: "bg-[#229ED9]" },
-  { label: "X (Twitter)", href: "https://x.com/kazispot", color: "bg-slate-900" },
-  { label: "Instagram", href: "https://instagram.com/kazispot", color: "bg-gradient-to-r from-[#833AB4] to-[#FD1D1D]" },
-  { label: "Facebook", href: "https://facebook.com/kazispot", color: "bg-[#1877F2]" },
-  { label: "TikTok", href: "https://tiktok.com/@kazispot", color: "bg-black" },
+  { label: "X (Twitter)", href: "https://x.com/", color: "bg-slate-900" },
+  { label: "Instagram", href: "https://instagram.com/", color: "bg-gradient-to-r from-[#833AB4] to-[#FD1D1D]" },
+  { label: "Facebook", href: "https://facebook.com/", color: "bg-[#1877F2]" },
+  { label: "TikTok", href: "https://tiktok.com/", color: "bg-black" },
 ];
 
 const links = [

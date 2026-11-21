@@ -48,7 +48,7 @@ export default function MarketingStudio() {
   }
 
   function buildText() {
-        return `🚨 NEW JOB ALERT — KaziSpot\n\n${title}\n${company}\n\n📍 ${location}\n💰 Est. ${salary}\n🗂️ ${category}${deadline ? `\n⏳ Deadline: ${deadline}` : ""}\n\n🔗 Apply now: https://www.kazispot.com/jobs/${selectedJob?.id}\n\n📲 Join our WhatsApp Channel for daily alerts: https://whatsapp.com/channel/0029Vb9lSs@FSAt5o20KvL1Q\n📲 Join our Telegram: https://t.me/kazispot\n\nYour Work Awaits.\n#KaziSpot #JobsInKenya #Hiring #NowHiring`;
+    return `🚨 NEW JOB ALERT — KaziSpot\n\n${title}\n${company}\n\n📍 ${location}\n💰 Est. ${salary}\n🗂️ ${category}${deadline ? `\n⏳ Deadline: ${deadline}` : ""}\n\n🔗 Apply now: https://www.kazispot.com/jobs/${selectedJob?.id}\n\n📲 Join our WhatsApp Channel for daily alerts: https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q\n📲 Join our Telegram: https://t.me/kazispot\n\nYour Work Awaits.\n#KaziSpot #JobsInKenya #Hiring #NowHiring`;
   }
 
   async function markAsMarketed() {
