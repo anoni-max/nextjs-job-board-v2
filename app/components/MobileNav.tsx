@@ -6,7 +6,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Home, Users, Briefcase, Globe, Lock, LogIn, LogOut, X } from "lucide-react";
 
-const jobSeekerMenu = [
+type MenuItem = { label: string; href: string } | { header: string };
+
+const jobSeekerMenu: MenuItem[] = [
   { label: "Browse Jobs", href: "/" },
   { label: "Career Toolkit", href: "/career-toolkit" },
   { label: "Pricing", href: "/pricing" },
@@ -15,15 +17,22 @@ const jobSeekerMenu = [
   { label: "Job Alerts", href: "/job-alerts" },
 ];
 
-const employerMenu = [
+const employerMenu: MenuItem[] = [
   { label: "Post a Job", href: "/post" },
   { label: "Talent Search", href: "/talent" },
   { label: "Pricing", href: "/pricing" },
   { label: "Dashboard", href: "/dashboard" },
 ];
 
-const communityMenu = [
-  { label: "WhatsApp channel", href: "https://whatsapp.com/channel/0029Vb9lSs@FSAt5o20KvL1Q" },
+const communityMenu: MenuItem[] = [
+  { header: "Social Media" },
+  { label: "WhatsApp", href: "https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q" },
+  { label: "Telegram", href: "https://t.me/kazispot" },
+  { label: "X (Twitter)", href: "https://x.com/" },
+  { label: "Instagram", href: "https://instagram.com/" },
+  { label: "Facebook", href: "https://facebook.com/" },
+  { label: "TikTok", href: "https://tiktok.com/" },
+  { header: "Community" },
   { label: "Blog", href: "/blog" },
   { label: "Reviews", href: "/reviews" },
   { label: "About Us", href: "/about" },
@@ -34,7 +43,7 @@ const communityMenu = [
   { label: "Terms", href: "/terms" },
 ];
 
-const menus: Record<string, { title: string; items: { label: string; href: string }[] }> = {
+const menus: Record<string, { title: string; items: MenuItem[] }> = {
   seekers: { title: "Job Seekers", items: jobSeekerMenu },
   employers: { title: "Employers", items: employerMenu },
   community: { title: "Community", items: communityMenu },
@@ -59,7 +68,6 @@ export default function MobileNav() {
 
   return (
     <>
-      {/* Menu panel (opens above the bottom bar) */}
       {activeMenu && (
         <div className="fixed bottom-16 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-lg max-h-[50vh] overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -69,7 +77,14 @@ export default function MobileNav() {
             </button>
           </div>
           <div className="py-2">
-            {activeMenu.items.map((item) => {
+            {activeMenu.items.map((item, i) => {
+              if ("header" in item) {
+                return (
+                  <p key={i} className="px-4 pt-4 pb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    {item.header}
+                  </p>
+                );
+              }
               const isExternal = item.href.startsWith("http");
               const cls = "flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50";
               if (isExternal) {
@@ -89,7 +104,6 @@ export default function MobileNav() {
         </div>
       )}
 
-      {/* Bottom bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex justify-around items-stretch">
           <Link href="/" className={itemCls(pathname === "/")}>
