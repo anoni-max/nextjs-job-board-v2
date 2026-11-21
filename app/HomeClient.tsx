@@ -3,7 +3,56 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Clock, BadgeCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+function timeAgo(input?: string | number): string {
+  if (!input) return "";
+  const date = new Date(input);
+  if (isNaN(date.getTime())) return "";
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (seconds < 60) return "just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days === 1 ? "1 day ago" : `${days} days ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? "1 month ago" : `${months} months ago`;
+
+  const years = Math.floor(days / 365);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
+}
+
+function TimeAgo({ date }: { date?: string | number }) {
+  const [label, setLabel] = useState("");
+
+  useEffect(() => {
+    function update() {
+      setLabel(timeAgo(date));
+    }
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [date]);
+
+  if (!label) return null;
+
+  return (
+    <div className="flex items-center gap-1 text-xs text-gray-400 font-medium mr-auto md:mr-0">
+      <Clock className="w-3.5 h-3.5" />
+      <span>{label}</span>
+    </div>
+  );
+}
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -103,12 +152,8 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
 
               {/* Right Side: Time & Apply Button */}
               <div className="flex items-center justify-end gap-4 mt-4 md:mt-0 shrink-0 md:ml-4 w-full md:w-auto">
-                {/* Hides the "New" text on mobile so it doesn't stretch the button */}
-                <div className="hidden md:flex items-center gap-1 text-xs text-gray-400 font-medium mr-auto md:mr-0">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>New</span>
-                </div>
-                {/* The Apply Button - smaller padding on mobile */}
+                <TimeAgo date={job.postedAt || job.date} />
+                {/* The Apply Button */}
                 <div className="bg-blue-600 text-white text-sm font-semibold px-6 py-1.5 md:px-6 md:py-2 rounded-lg group-hover:bg-blue-700 transition shadow-sm">
                   Apply
                 </div>
