@@ -3,70 +3,39 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Clock, BadgeCheck } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-function timeAgo(input?: string | number): string {
-  if (!input) return "";
-  const date = new Date(input);
-  if (isNaN(date.getTime())) return "";
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-  if (seconds < 60) return "just now";
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return days === 1 ? "1 day ago" : `${days} days ago`;
-
-  const weeks = Math.floor(days / 7);
-  if (weeks < 5) return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
-
-  const months = Math.floor(days / 30);
-  if (months < 12) return months === 1 ? "1 month ago" : `${months} months ago`;
-
-  const years = Math.floor(days / 365);
-  return years === 1 ? "1 year ago" : `${years} years ago`;
-}
-
-function TimeAgo({ date }: { date?: string | number }) {
-  const [label, setLabel] = useState("");
-
-  useEffect(() => {
-    function update() {
-      setLabel(timeAgo(date));
-    }
-    update();
-    const id = setInterval(update, 60000);
-    return () => clearInterval(id);
-  }, [date]);
-
-  if (!label) return null;
-
-  return (
-    <div className="flex items-center gap-1 text-xs text-gray-400 font-medium mr-auto md:mr-0">
-      <Clock className="w-3.5 h-3.5" />
-      <span>{label}</span>
-    </div>
-  );
+function jobTypeOf(job: any): string {
+  const s = `${job.employmentType || ""} ${(job.tags || []).join(" ")}`.toLowerCase();
+  if (s.includes("intern")) return "Internship";
+  if (s.includes("part-time") || s.includes("part time")) return "Part-time";
+  if (s.includes("contract") || s.includes("freelance")) return "Contract";
+  if (s.includes("remote")) return "Remote";
+  return "Full-time";
 }
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [location, setLocation] = useState("All");
+  const [jobType, setJobType] = useState("All");
 
   const categories = [
     "All", "Executive", "Customer Support", "Marketing", 
     "Ops", "Medical", "Education", "Finance", "Design"
   ];
+  const jobTypes = ["All", "Full-time", "Part-time", "Contract", "Internship", "Remote"];
+  const locations = Array.from(new Set(jobs.map((j: any) => j.location).filter(Boolean))).sort();
 
-  const categoryFilteredJobs = jobs.filter((job) => {
-    if (activeCategory === "All") return true;
-    return job.tags?.some((tag: string) => 
-      tag.toLowerCase().includes(activeCategory.toLowerCase())
-    ) || job.position?.toLowerCase().includes(activeCategory.toLowerCase());
+  const filteredJobs = jobs.filter((job: any) => {
+    if (activeCategory !== "All") {
+      const match = job.tags?.some((tag: string) => 
+        tag.toLowerCase().includes(activeCategory.toLowerCase())
+      ) || job.position?.toLowerCase().includes(activeCategory.toLowerCase());
+      if (!match) return false;
+    }
+    if (location !== "All" && job.location !== location) return false;
+    if (jobType !== "All" && jobTypeOf(job) !== jobType) return false;
+    return true;
   });
 
   return (
@@ -88,21 +57,45 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
         ))}
       </div>
 
+      {/* Filters: Location + Job Type */}
+      <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-gray-100">
+        <select
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="All">All Locations</option>
+          {locations.map((loc: any) => (
+            <option key={loc} value={loc}>{loc}</option>
+          ))}
+        </select>
+
+        <select
+          value={jobType}
+          onChange={(e) => setJobType(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {jobTypes.map((t) => (
+            <option key={t} value={t}>{t === "All" ? "All Types" : t}</option>
+          ))}
+        </select>
+      </div>
+
       {/* The List View */}
       <div className="flex flex-col">
-        {categoryFilteredJobs.length === 0 ? (
+        {filteredJobs.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No jobs found in this category.</p>
+            <p className="text-gray-500 text-lg">No jobs found. Try different filters.</p>
           </div>
         ) : (
-          categoryFilteredJobs.map((job: any) => (
+          filteredJobs.map((job: any) => (
             <Link 
               href={`/jobs/${job.id}`} 
               key={job.id} 
               className="group flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-100 hover:bg-slate-50 transition-colors"
             >
               
-              {/* Left Side: Logo, Title, Company, Location+Tags */}
+              {/* Left Side: Logo, Title, Company, Location+Time+Tags */}
               <div className="flex items-start md:items-center gap-4 flex-1 min-w-0">
                 <Image 
                   src={`https://logo.clearbit.com/${job.company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`} 
@@ -117,12 +110,10 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                 />
                 
                 <div className="flex-1 min-w-0">
-                  {/* Title - Forced to single line with truncate */}
                   <h2 className="text-[17px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
                     {job.position}
                   </h2>
                   
-                  {/* Company + Verified badge */}
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-gray-500 text-sm truncate">{job.company}</p>
                     {job.verified && (
@@ -132,15 +123,19 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                     )}
                   </div>
                   
-                  {/* Location + Skills on the same line */}
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {/* Location Pill */}
                     <div className="bg-slate-100 px-2.5 py-1 rounded-md flex items-center gap-1 border border-slate-200 text-xs text-gray-600">
                       <MapPin className="w-3 h-3 text-slate-400" />
                       <span className="truncate max-w-[150px]">{job.location || "Remote"}</span>
                     </div>
 
-                    {/* Tags */}
+                    {job.timeAgo && (
+                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                        <Clock className="w-3 h-3" />
+                        <span>{job.timeAgo}</span>
+                      </span>
+                    )}
+
                     {job.tags?.slice(0, 3).map((tag: string) => (
                       <span key={tag} className="border border-gray-200 text-gray-600 text-xs px-2.5 py-1 rounded-md whitespace-nowrap">
                         {tag}
@@ -150,10 +145,8 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                 </div>
               </div>
 
-              {/* Right Side: Time & Apply Button */}
-              <div className="flex items-center justify-end gap-4 mt-4 md:mt-0 shrink-0 md:ml-4 w-full md:w-auto">
-                <TimeAgo date={job.postedAt || job.date} />
-                {/* The Apply Button */}
+              {/* Right Side: Apply Button */}
+              <div className="flex items-center justify-end mt-4 md:mt-0 shrink-0 md:ml-4 w-full md:w-auto">
                 <div className="bg-blue-600 text-white text-sm font-semibold px-6 py-1.5 md:px-6 md:py-2 rounded-lg group-hover:bg-blue-700 transition shadow-sm">
                   Apply
                 </div>
