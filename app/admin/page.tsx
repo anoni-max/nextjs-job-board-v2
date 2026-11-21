@@ -233,6 +233,14 @@ export default function AdminDashboard() {
                 View Talent Pool
               </Link>
 
+              <Link
+                href="/admin/marketing"
+                className="text-sm text-emerald-600 hover:underline font-bold bg-emerald-50 px-4 py-2 rounded-lg"
+              >
+                Marketing Studio
+              </Link>
+
+
               <button
                 onClick={async () => {
                   await fetch("/api/auth/logout", { method: "POST" });
