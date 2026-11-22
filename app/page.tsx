@@ -87,6 +87,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         subtitle="Discover remote and local opportunities" 
         count={allJobs.length} 
         countLabel="Active Jobs"
+        showSocialButton
       />
 
       {/* Main Two-Column Grid */}

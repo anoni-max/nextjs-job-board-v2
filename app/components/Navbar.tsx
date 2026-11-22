@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
-type MenuItem = { label: string; href: string } | { header: string };
-
-const jobSeekerMenu: MenuItem[] = [
+const jobSeekerMenu = [
   { label: "Browse Jobs", href: "/" },
   { label: "Career Toolkit", href: "/career-toolkit" },
   { label: "Pricing", href: "/pricing" },
@@ -17,22 +15,15 @@ const jobSeekerMenu: MenuItem[] = [
   { label: "Job Alerts", href: "/job-alerts" },
 ];
 
-const employerMenu: MenuItem[] = [
+const employerMenu = [
   { label: "Post a Job", href: "/post" },
   { label: "Talent Search", href: "/talent" },
   { label: "Pricing", href: "/pricing" },
   { label: "Dashboard", href: "/dashboard" },
 ];
 
-const communityMenu: MenuItem[] = [
-  { header: "Social Media" },
-  { label: "WhatsApp", href: "https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q" },
-  { label: "Telegram", href: "https://t.me/kazispot" },
-  { label: "X (Twitter)", href: "https://x.com/" },
-  { label: "Instagram", href: "https://instagram.com/" },
-  { label: "Facebook", href: "https://facebook.com/" },
-  { label: "TikTok", href: "https://tiktok.com/" },
-  { header: "Community" },
+const communityMenu = [
+  { label: "Social Media", href: "/social-media" },
   { label: "Blog", href: "/blog" },
   { label: "Reviews", href: "/reviews" },
   { label: "About Us", href: "/about" },
@@ -43,7 +34,7 @@ const communityMenu: MenuItem[] = [
   { label: "Terms", href: "/terms" },
 ];
 
-function NavDropdown({ label, items }: { label: string; items: MenuItem[] }) {
+function NavDropdown({ label, items }: { label: string; items: { label: string; href: string }[] }) {
   return (
     <div className="relative group">
       <button className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 py-1">
@@ -52,14 +43,7 @@ function NavDropdown({ label, items }: { label: string; items: MenuItem[] }) {
       </button>
       <div className="absolute left-0 top-full pt-2 hidden group-hover:block">
         <div className="bg-white border border-gray-200 rounded-xl shadow-lg py-2 w-56 max-h-[80vh] overflow-y-auto">
-          {items.map((item, i) => {
-            if ("header" in item) {
-              return (
-                <p key={i} className="px-4 pt-3 pb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                  {item.header}
-                </p>
-              );
-            }
+          {items.map((item) => {
             const isExternal = item.href.startsWith("http");
             const cls = "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600";
             if (isExternal) {
@@ -82,11 +66,17 @@ function NavDropdown({ label, items }: { label: string; items: MenuItem[] }) {
 }
 
 export default function Navbar() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  const isAdmin = (session?.user as any)?.isAdmin === true;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAdmin = mounted && (session?.user as any)?.isAdmin === true;
+  const isLoggedIn = mounted && !!session?.user;
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -126,9 +116,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          {status === "loading" ? (
-            <span className="text-sm text-gray-400">…</span>
-          ) : session?.user ? (
+          {isLoggedIn ? (
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="text-sm font-medium text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap"

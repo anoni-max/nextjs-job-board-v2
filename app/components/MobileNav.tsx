@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Users, Briefcase, Globe, Lock, LogIn, LogOut, X } from "lucide-react";
 
-type MenuItem = { label: string; href: string } | { header: string };
-
-const jobSeekerMenu: MenuItem[] = [
+const jobSeekerMenu = [
   { label: "Browse Jobs", href: "/" },
   { label: "Career Toolkit", href: "/career-toolkit" },
   { label: "Pricing", href: "/pricing" },
@@ -17,22 +15,15 @@ const jobSeekerMenu: MenuItem[] = [
   { label: "Job Alerts", href: "/job-alerts" },
 ];
 
-const employerMenu: MenuItem[] = [
+const employerMenu = [
   { label: "Post a Job", href: "/post" },
   { label: "Talent Search", href: "/talent" },
   { label: "Pricing", href: "/pricing" },
   { label: "Dashboard", href: "/dashboard" },
 ];
 
-const communityMenu: MenuItem[] = [
-  { header: "Social Media" },
-  { label: "WhatsApp", href: "https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q" },
-  { label: "Telegram", href: "https://t.me/kazispot" },
-  { label: "X (Twitter)", href: "https://x.com/" },
-  { label: "Instagram", href: "https://instagram.com/" },
-  { label: "Facebook", href: "https://facebook.com/" },
-  { label: "TikTok", href: "https://tiktok.com/" },
-  { header: "Community" },
+const communityMenu = [
+  { label: "Social Media", href: "/social-media" },
   { label: "Blog", href: "/blog" },
   { label: "Reviews", href: "/reviews" },
   { label: "About Us", href: "/about" },
@@ -43,7 +34,7 @@ const communityMenu: MenuItem[] = [
   { label: "Terms", href: "/terms" },
 ];
 
-const menus: Record<string, { title: string; items: MenuItem[] }> = {
+const menus: Record<string, { title: string; items: { label: string; href: string }[] }> = {
   seekers: { title: "Job Seekers", items: jobSeekerMenu },
   employers: { title: "Employers", items: employerMenu },
   community: { title: "Community", items: communityMenu },
@@ -52,8 +43,15 @@ const menus: Record<string, { title: string; items: MenuItem[] }> = {
 export default function MobileNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const isAdmin = (session?.user as any)?.isAdmin === true;
+  const [mounted, setMounted] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAdmin = mounted && (session?.user as any)?.isAdmin === true;
+  const isLoggedIn = mounted && !!session?.user;
 
   function toggleMenu(key: string) {
     setOpenMenu((prev) => (prev === key ? null : key));
@@ -77,14 +75,7 @@ export default function MobileNav() {
             </button>
           </div>
           <div className="py-2">
-            {activeMenu.items.map((item, i) => {
-              if ("header" in item) {
-                return (
-                  <p key={i} className="px-4 pt-4 pb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    {item.header}
-                  </p>
-                );
-              }
+            {activeMenu.items.map((item) => {
               const isExternal = item.href.startsWith("http");
               const cls = "flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50";
               if (isExternal) {
@@ -131,7 +122,7 @@ export default function MobileNav() {
               <Lock className="w-5 h-5" />
               <span className="mt-0.5">Admin</span>
             </Link>
-          ) : session?.user ? (
+          ) : isLoggedIn ? (
             <button onClick={() => signOut({ callbackUrl: "/" })} className={itemCls(false)}>
               <LogOut className="w-5 h-5" />
               <span className="mt-0.5">Sign out</span>
