@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Copy, CheckCircle2, Briefcase, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Copy, CheckCircle2, Briefcase, Share2, Sparkles } from "lucide-react";
 
 function formatDeadline(date?: string) {
   if (!date) return "";
@@ -23,6 +23,7 @@ export default function MarketingStudio() {
   const [location, setLocation] = useState("");
   const [salary, setSalary] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [estimatingSalary, setEstimatingSalary] = useState(false);
 
   const [copied, setCopied] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
@@ -63,6 +64,32 @@ export default function MarketingStudio() {
 
   function buildText() {
     return `🚨 NEW JOB ALERT — KaziSpot\n\n${title}\n${company}\n\n📍 ${location}\n💰 Est. ${salary}\n🗂️ ${category}${deadline ? `\n⏳ Deadline: ${deadline}` : ""}\n\n🔗 Apply now: https://www.kazispot.com/jobs/${selectedJob?.id}\n\n📲 Join our WhatsApp Channel for daily alerts: https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q\n📲 Join our Telegram: https://t.me/kazispot\n\nYour Work Awaits.\n#KaziSpot #JobsInKenya #Hiring #NowHiring`;
+  }
+
+  async function estimateSalary() {
+    if (!selectedJob) return;
+    setEstimatingSalary(true);
+    try {
+      const res = await fetch("/api/jobs/estimate-salary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          company,
+          location,
+          category,
+          description: selectedJob.description || "",
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.estimate) setSalary(data.estimate);
+      }
+    } catch (e) {
+      console.error("Failed to estimate salary", e);
+    } finally {
+      setEstimatingSalary(false);
+    }
   }
 
   async function markAsMarketed() {
@@ -235,7 +262,18 @@ export default function MarketingStudio() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Salary</label>
-                    <input value={salary} onChange={(e) => setSalary(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                    <div className="flex gap-2">
+                      <input value={salary} onChange={(e) => setSalary(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm" />
+                      <button
+                        type="button"
+                        onClick={estimateSalary}
+                        disabled={estimatingSalary}
+                        className="bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 whitespace-nowrap flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {estimatingSalary ? "Estimating..." : "Estimate"}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Deadline</label>
