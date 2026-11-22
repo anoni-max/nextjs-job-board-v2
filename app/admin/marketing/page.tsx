@@ -14,6 +14,7 @@ function formatDeadline(date?: string) {
 export default function MarketingStudio() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -46,6 +47,15 @@ export default function MarketingStudio() {
     setSalary(job.salary || "Competitive");
     setDeadline(formatDeadline(job.expiresAt));
   }
+
+  const filteredJobs = jobs.filter((job) => {
+    const q = search.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      (job.title || "").toLowerCase().includes(q) ||
+      (job.company || "").toLowerCase().includes(q)
+    );
+  });
 
   function buildText() {
     return `🚨 NEW JOB ALERT — KaziSpot\n\n${title}\n${company}\n\n📍 ${location}\n💰 Est. ${salary}\n🗂️ ${category}${deadline ? `\n⏳ Deadline: ${deadline}` : ""}\n\n🔗 Apply now: https://www.kazispot.com/jobs/${selectedJob?.id}\n\n📲 Join our WhatsApp Channel for daily alerts: https://whatsapp.com/channel/0029Vb9lSsOFSAt5o20KvL1Q\n📲 Join our Telegram: https://t.me/kazispot\n\nYour Work Awaits.\n#KaziSpot #JobsInKenya #Hiring #NowHiring`;
@@ -158,12 +168,20 @@ export default function MarketingStudio() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: Job list */}
           <div className="lg:col-span-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[800px] overflow-y-auto">
-            <h2 className="font-bold text-gray-900 mb-4 px-2">Select a Job</h2>
+            <h2 className="font-bold text-gray-900 mb-3 px-2">Select a Job</h2>
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search jobs..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
             <div className="space-y-2">
-              {jobs.length === 0 && (
-                <p className="text-sm text-gray-400 px-2">No new jobs to share. 🎉</p>
+              {filteredJobs.length === 0 && (
+                <p className="text-sm text-gray-400 px-2">No jobs found.</p>
               )}
-              {jobs.map((job) => (
+              {filteredJobs.map((job) => (
                 <button
                   key={job.id}
                   onClick={() => selectJob(job)}
@@ -210,32 +228,32 @@ export default function MarketingStudio() {
                   </div>
                 </div>
 
-                {/* Poster */}
-                <div className="flex justify-center bg-gray-200 p-6 rounded-xl border border-gray-300">
+                {/* Poster (1:1) */}
+                <div className="flex justify-center bg-gray-200 p-6 rounded-xl border border-gray-300 overflow-x-auto">
                   <div
                     ref={posterRef}
-                    className="w-[600px] h-[750px] bg-gradient-to-br from-[#071022] via-[#0c1c38] to-[#16365f] text-white p-10 flex flex-col relative overflow-hidden"
+                    className="w-[540px] h-[540px] shrink-0 bg-gradient-to-br from-[#071022] via-[#0c1c38] to-[#16365f] text-white p-8 flex flex-col relative overflow-hidden"
                   >
                     <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 via-blue-500 to-transparent"></div>
-                    <div className="absolute -top-24 -right-24 w-80 h-80 bg-sky-500/20 rounded-full"></div>
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/10 rounded-full"></div>
+                    <div className="absolute -top-16 -right-16 w-56 h-56 bg-sky-500/20 rounded-full"></div>
+                    <div className="absolute -bottom-20 -left-12 w-56 h-56 bg-blue-600/10 rounded-full"></div>
 
                     <div className="flex items-center justify-between relative z-10">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center font-extrabold text-lg">K</div>
-                        <span className="text-xl font-extrabold tracking-tight">KaziSpot</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-extrabold text-base">K</div>
+                        <span className="text-lg font-extrabold tracking-tight">KaziSpot</span>
                       </div>
-                      <span className="text-xs font-bold bg-blue-600/20 border border-blue-400/40 text-blue-200 px-4 py-1.5 rounded-full uppercase tracking-widest">
+                      <span className="text-[10px] font-bold bg-blue-600/20 border border-blue-400/40 text-blue-200 px-3 py-1 rounded-full uppercase tracking-widest">
                         We&apos;re Hiring
                       </span>
                     </div>
 
-                    <div className="relative z-10 mt-16">
+                    <div className="relative z-10 mt-8">
                       {company && (
-                        <p className="text-sm text-sky-300 font-semibold uppercase tracking-widest mb-3">{company}</p>
+                        <p className="text-xs text-sky-300 font-semibold uppercase tracking-widest mb-2">{company}</p>
                       )}
-                      <h2 className="text-5xl font-extrabold leading-[1.1]">{title}</h2>
-                      <div className="mt-6 inline-block bg-sky-400/10 border border-sky-400/30 text-sky-300 text-xs font-semibold px-4 py-1.5 rounded-full uppercase tracking-wider">
+                      <h2 className="text-4xl font-extrabold leading-[1.15]">{title}</h2>
+                      <div className="mt-4 inline-block bg-sky-400/10 border border-sky-400/30 text-sky-300 text-[11px] font-semibold px-3 py-1 rounded-full uppercase tracking-wider">
                         {category}
                       </div>
                     </div>
@@ -243,24 +261,24 @@ export default function MarketingStudio() {
                     <div className="flex-1"></div>
 
                     <div className="relative z-10 grid grid-cols-3 gap-3">
-                      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">Location</p>
-                        <p className="font-semibold text-sm leading-snug">{location}</p>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Location</p>
+                        <p className="font-semibold text-xs leading-snug">{location}</p>
                       </div>
-                      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">Salary</p>
-                        <p className="font-semibold text-sm leading-snug text-sky-300">Est. {salary}</p>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Salary</p>
+                        <p className="font-semibold text-xs leading-snug text-sky-300">Est. {salary}</p>
                       </div>
-                      <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1.5">Deadline</p>
-                        <p className="font-semibold text-sm leading-snug">{deadline || "Open"}</p>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                        <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-1">Deadline</p>
+                        <p className="font-semibold text-xs leading-snug">{deadline || "Open"}</p>
                       </div>
                     </div>
 
-                    <div className="relative z-10 mt-8 pt-6 border-t border-white/10 flex items-end justify-between">
+                    <div className="relative z-10 mt-5 pt-4 border-t border-white/10 flex items-end justify-between">
                       <div>
-                        <p className="text-xl font-extrabold tracking-tight">Your Work Awaits.</p>
-                        <p className="text-xs text-slate-400 mt-1">www.kazispot.com</p>
+                        <p className="text-base font-extrabold tracking-tight">Your Work Awaits.</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">www.kazispot.com</p>
                       </div>
                     </div>
                   </div>
