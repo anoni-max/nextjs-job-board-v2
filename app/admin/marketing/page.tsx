@@ -15,6 +15,7 @@ export default function MarketingStudio() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [search, setSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState("All");
 
   const [title, setTitle] = useState("");
   const [company, setCompany] = useState("");
@@ -48,13 +49,16 @@ export default function MarketingStudio() {
     setDeadline(formatDeadline(job.expiresAt));
   }
 
+  const locations = Array.from(new Set(jobs.map((j: any) => j.location).filter(Boolean))).sort();
+
   const filteredJobs = jobs.filter((job) => {
     const q = search.toLowerCase().trim();
-    if (!q) return true;
-    return (
+    const matchesSearch =
+      !q ||
       (job.title || "").toLowerCase().includes(q) ||
-      (job.company || "").toLowerCase().includes(q)
-    );
+      (job.company || "").toLowerCase().includes(q);
+    const matchesLocation = locationFilter === "All" || job.location === locationFilter;
+    return matchesSearch && matchesLocation;
   });
 
   function buildText() {
@@ -173,9 +177,20 @@ export default function MarketingStudio() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search jobs..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search by title or company..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            <select
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-3 outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="All">All Locations</option>
+              {locations.map((loc: any) => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
 
             <div className="space-y-2">
               {filteredJobs.length === 0 && (
