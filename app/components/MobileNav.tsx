@@ -60,7 +60,7 @@ export default function MobileNav() {
   const activeMenu = openMenu ? menus[openMenu] : null;
 
   const itemCls = (active: boolean) =>
-    `flex flex-col items-center justify-center py-2 px-1 text-[10px] font-medium ${
+    `flex flex-col items-center justify-center py-2 px-0.5 text-[9px] font-medium ${
       active ? "text-blue-600" : "text-gray-500"
     }`;
 
@@ -117,12 +117,14 @@ export default function MobileNav() {
             <span className="mt-0.5">Community</span>
           </button>
 
-          {isAdmin ? (
+          {isAdmin && (
             <Link href="/admin" className={itemCls(pathname === "/admin")}>
               <Lock className="w-5 h-5" />
               <span className="mt-0.5">Admin</span>
             </Link>
-          ) : isLoggedIn ? (
+          )}
+
+          {isLoggedIn ? (
             <button onClick={() => signOut({ callbackUrl: "/" })} className={itemCls(false)}>
               <LogOut className="w-5 h-5" />
               <span className="mt-0.5">Sign out</span>
