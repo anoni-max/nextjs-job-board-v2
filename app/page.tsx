@@ -4,23 +4,43 @@ import StatsHeader from "./components/StatsHeader";
 
 export const dynamic = "force-dynamic";
 
+function timeAgo(dateInput?: Date | string | null): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} mo ago`;
+  const years = Math.floor(months / 12);
+  return `${years} yr ago`;
+}
+
 export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  let remoteJobs = [];
+  let remoteJobs: any[] = [];
   try {
-    const res = await fetch("https://remoteok.com/api", { cache: 'no-store' });
+    const res = await fetch("https://remoteok.com/api", { cache: "no-store" });
     const data = await res.json();
     remoteJobs = Array.isArray(data) ? data.slice(1, 20) : [];
   } catch (error) {
     console.error("Failed to fetch remote jobs:", error);
   }
 
-  let localJobs = [];
+  let localJobs: any[] = [];
   try {
     localJobs = await prisma.job.findMany({
       where: {
         expiresAt: { gt: new Date() },
         isApproved: true,
+        rejected: false,
       },
+      orderBy: { createdAt: "desc" },
     });
   } catch (error) {
     console.error("Failed to fetch local jobs:", error);
@@ -34,31 +54,53 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     description: job.description,
     url: job.applyUrl,
     applyEmail: job.applyEmail,
+    salary: job.salary,
+    employmentType: job.employmentType,
+    postedAt: job.postedDate || job.createdAt,
+    isLocal: true,
     tags: ["Local", "Featured"],
   }));
 
-  const allJobs = [...formattedLocalJobs, ...remoteJobs];
+  const formattedRemoteJobs = remoteJobs.map((job: any) => ({
+    id: String(job.id),
+    position: job.position || job.title || "Remote Job",
+    company: job.company || "Remote Company",
+    location: job.location || "Remote",
+    description: job.description,
+    url: job.url || job.apply_url,
+    applyEmail: null,
+    salary: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : null,
+    employmentType: null,
+    postedAt: job.date || job.created_at,
+    isLocal: false,
+    tags: ["Remote"],
+  }));
+
+  const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs];
+
+  const jobsWithTime = allJobs.map((job) => ({ ...job, timeAgo: timeAgo(job.postedAt) }));
 
   const resolvedParams = await searchParams;
   const searchQuery = resolvedParams.q?.toLowerCase() || "";
 
-  const filteredJobs = allJobs.filter((job) => {
-    return (
-      job.position?.toLowerCase().includes(searchQuery) ||
-      job.company?.toLowerCase().includes(searchQuery) ||
-      job.location?.toLowerCase().includes(searchQuery)
-    );
-  });
+  const filteredJobs = searchQuery
+    ? jobsWithTime.filter((job) =>
+        job.position?.toLowerCase().includes(searchQuery) ||
+        job.company?.toLowerCase().includes(searchQuery) ||
+        job.location?.toLowerCase().includes(searchQuery)
+      )
+    : jobsWithTime;
 
   return (
     <main className="min-h-screen">
 
-      {/* Sticky Stats Header */}
+      {/* Sticky Stats Header (with Join us button) */}
       <StatsHeader
         title="Latest Jobs"
         subtitle="Discover remote and local opportunities"
         count={allJobs.length}
         countLabel="Active Jobs"
+        showSocialButton
       />
 
       {/* Main Two-Column Grid */}
