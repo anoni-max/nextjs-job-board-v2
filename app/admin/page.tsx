@@ -232,7 +232,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h1 className="text-2xl font-extrabold text-gray-900">Admin: Post a Job</h1>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/admin/talent"
                 className="text-sm text-blue-600 hover:underline font-bold bg-blue-50 px-4 py-2 rounded-lg"
@@ -247,6 +247,12 @@ export default function AdminDashboard() {
                 Marketing Studio
               </Link>
 
+              <Link
+                href="/admin/quotes"
+                className="text-sm text-purple-600 hover:underline font-bold bg-purple-50 px-4 py-2 rounded-lg"
+              >
+                Quote Studio
+              </Link>
 
               <button
                 onClick={async () => {
