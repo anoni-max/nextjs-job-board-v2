@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { MapPin, Clock, ExternalLink, Mail, BadgeCheck } from "lucide-react";
+import { MapPin, Clock, ExternalLink, Mail, Check } from "lucide-react";
 import { useState } from "react";
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
@@ -15,10 +14,8 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
     "Ops", "Medical", "Education", "Finance", "Design"
   ];
 
-  // Unique locations from the data
   const locations = ["All", ...Array.from(new Set(jobs.map((j) => j.location).filter(Boolean)))];
 
-  // Unique job types from employmentType
   const jobTypes = ["All", ...Array.from(new Set(
     jobs.flatMap((j) => (j.employmentType || "").split(/[,/]/).map((s: string) => s.trim()).filter(Boolean))
   ))];
@@ -113,56 +110,42 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
             return (
               <div
                 key={job.id}
-                className="group flex flex-col md:flex-row md:items-center justify-between p-5 border-b border-gray-100 hover:bg-slate-50 transition-colors"
+                className="group px-4 py-3 border-b border-gray-100 hover:bg-slate-50 transition-colors"
               >
-                {/* Left side */}
-                <Link href={`/jobs/${job.id}`} className="flex items-start md:items-center gap-4 flex-1 min-w-0">
-                  <Image
-                    src={`https://logo.clearbit.com/${(job.company || "company").toLowerCase().replace(/[^a-z0-9]/g, '')}.com`}
-                    alt={job.company || "Company"}
-                    width={48}
-                    height={48}
-                    unoptimized
-                    className="rounded-full object-contain bg-white border border-gray-200 p-1 shrink-0 mt-1 md:mt-0"
-                    onError={(e) => {
-                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${job.company || "Company"}&background=random&color=fff`;
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h2 className="text-[17px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
-                        {job.position}
-                      </h2>
-                      {job.isLocal && (
-                        <BadgeCheck className="w-4 h-4 text-blue-600 shrink-0" aria-label="Verified" />
-                      )}
-                    </div>
-                    <p className="text-gray-500 text-sm mt-0.5 truncate">{job.company}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <div className="bg-slate-100 px-2.5 py-1 rounded-md flex items-center gap-1 border border-slate-200 text-xs text-gray-600">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        <span className="truncate max-w-[150px]">{job.location || "Remote"}</span>
-                      </div>
-                      {job.tags?.slice(0, 3).map((tag: string) => (
-                        <span key={tag} className="border border-gray-200 text-gray-600 text-xs px-2.5 py-1 rounded-md whitespace-nowrap">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </Link>
+                {/* Line 1: Job title + verified badge */}
+                <div className="flex items-center gap-2">
+                  <Link href={`/jobs/${job.id}`} className="min-w-0 flex-1">
+                    <h2 className="text-[15px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                      {job.position}
+                    </h2>
+                  </Link>
+                  {job.isLocal && (
+                    <span className="inline-flex items-center gap-0.5 text-green-600 shrink-0">
+                      <Check className="w-4 h-4" strokeWidth={3} />
+                      <span className="text-xs font-bold">Verified</span>
+                    </span>
+                  )}
+                </div>
 
-                {/* Right side: time + apply */}
-                <div className="flex items-center justify-end gap-3 mt-3 md:mt-0 shrink-0 md:ml-4 w-full md:w-auto">
-                  <div className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+                {/* Line 2: Company */}
+                <p className="text-xs text-gray-500 mt-0.5 truncate">{job.company}</p>
+
+                {/* Line 3: Location + time + apply button */}
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate max-w-[120px]">{job.location || "Remote"}</span>
+                  </div>
+                  <span className="text-gray-300 text-xs">•</span>
+                  <div className="flex items-center gap-1 text-xs text-gray-400 whitespace-nowrap">
                     <Clock className="w-3.5 h-3.5" />
-                    <span className="whitespace-nowrap">{job.timeAgo || "New"}</span>
+                    <span>{job.timeAgo || "New"}</span>
                   </div>
                   <a
                     href={apply.href}
                     target={apply.isMailto ? undefined : "_blank"}
                     rel="noopener noreferrer"
-                    className="bg-blue-600 text-white text-sm font-semibold px-5 py-1.5 md:px-6 md:py-2 rounded-lg group-hover:bg-blue-700 transition shadow-sm inline-flex items-center gap-1.5 whitespace-nowrap"
+                    className="ml-auto inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-semibold px-3.5 py-1 rounded-md hover:bg-blue-700 transition shadow-sm whitespace-nowrap shrink-0"
                   >
                     {apply.isMailto ? <Mail className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
                     {apply.label}
