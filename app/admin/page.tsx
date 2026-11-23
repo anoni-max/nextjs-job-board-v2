@@ -16,6 +16,7 @@ export default function AdminDashboard() {
     company: "",
     location: "",
     applyUrl: "",
+    applyEmail: "",
     description: "",
     expiresInDays: 30,
   });
@@ -115,6 +116,7 @@ export default function AdminDashboard() {
       location: job.location || "",
       description: job.description || "",
       applyUrl: job.applyUrl || "",
+      applyEmail: job.applyEmail || "",
       salary: job.salary || "",
       employmentType: job.employmentType || "",
       positions: job.positions || "",
@@ -174,6 +176,10 @@ export default function AdminDashboard() {
     const description = lines.slice(3).join("\n\n");
     const applyUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " " + company + " jobs Kenya")}`;
 
+    // Try to detect an application email in the pasted text
+    const emails = magicText.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) || [];
+    const applyEmail = emails.find((e: string) => !/unsubscribe|notification|alert|noreply/i.test(e)) || "";
+
     setFormData({
       ...formData,
       company,
@@ -181,6 +187,7 @@ export default function AdminDashboard() {
       location,
       description,
       applyUrl,
+      applyEmail,
     });
 
     setMagicText("");
@@ -201,7 +208,7 @@ export default function AdminDashboard() {
 
       if (res.ok) {
         setStatus("✅ Job posted successfully!");
-        setFormData({ title: "", company: "", location: "", applyUrl: "", description: "", expiresInDays: 30 });
+        setFormData({ title: "", company: "", location: "", applyUrl: "", applyEmail: "", description: "", expiresInDays: 30 });
       } else {
         setStatus("❌ Failed to post job.");
       }
@@ -364,8 +371,12 @@ export default function AdminDashboard() {
               <input required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Application URL or Email</label>
-              <input required value={formData.applyUrl} onChange={e => setFormData({...formData, applyUrl: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Application URL</label>
+              <input value={formData.applyUrl} onChange={e => setFormData({...formData, applyUrl: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="https://company.com/careers/job (optional if email provided)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Application Email</label>
+              <input value={formData.applyEmail} onChange={e => setFormData({...formData, applyEmail: e.target.value})} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="hr@company.co.ke (optional if URL provided)" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Expires in (Days)</label>
@@ -423,6 +434,10 @@ export default function AdminDashboard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Apply URL</label>
                   <input value={editForm.applyUrl} onChange={e => setEditForm({...editForm, applyUrl: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apply Email</label>
+                  <input value={editForm.applyEmail} onChange={e => setEditForm({...editForm, applyEmail: e.target.value})} className="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div>

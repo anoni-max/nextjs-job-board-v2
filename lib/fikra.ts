@@ -12,6 +12,7 @@ export interface ParsedJob {
   qualifications?: string;
   responsibilities?: string;
   applyUrl?: string;
+  applyEmail?: string;
 }
 
 export async function parseJobEmail(rawText: string): Promise<ParsedJob> {
@@ -45,7 +46,9 @@ export async function parseJobEmail(rawText: string): Promise<ParsedJob> {
             "deadline (ISO date YYYY-MM-DD if mentioned, or empty), " +
             "qualifications (string, newline-separated list, each line starting with '- ', or empty), " +
             "responsibilities (string, newline-separated list, each line starting with '- ', or empty), " +
-            "applyUrl (string or empty). " +
+            "applyUrl (string or empty, the website link used to apply), " +
+            "applyEmail (string or empty, the email address to send applications/CVs to; leave empty if applications go through a website link or no email is given). " +
+            "Ignore the sender's own email, 'unsubscribe' addresses and newsletter/alert emails. " +
             "Strip out newsletter headers, footers, 'unsubscribe' links and boilerplate. " +
             'If the email is NOT a job posting, return {"isJob": false}.',
         },

@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       location: parsed.location || "Kenya",
       description: parsed.description || "",
       applyUrl: parsed.applyUrl || "",
+      applyEmail: parsed.applyEmail || null,
       expiresAt: deadline || new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
       salary: parsed.salary || null,
       employmentType: parsed.employmentType || null,

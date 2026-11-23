@@ -49,6 +49,7 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
         location: localJob.location,
         description: localJob.description,
         url: localJob.applyUrl,
+        applyEmail: localJob.applyEmail,
         salary: localJob.salary,
         employmentType: localJob.employmentType,
         positions: localJob.positions,
@@ -97,6 +98,14 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
   const rawDesc = job.description || "No description provided.";
   const safeDesc = typeof rawDesc === "string" ? rawDesc : JSON.stringify(rawDesc);
 
+  // Website first -> email second -> Google search fallback
+  const applyHref = job.url && job.url.trim()
+    ? (job.url.trim().startsWith("http") ? job.url.trim() : `https://${job.url.trim()}`)
+    : job.applyEmail && job.applyEmail.trim()
+    ? `mailto:${job.applyEmail.trim()}?subject=${encodeURIComponent(`Application for ${job.position} at ${job.company}`)}`
+    : `https://www.google.com/search?q=${encodeURIComponent(`${job.position} ${job.company} jobs Kenya`)}`;
+  const isMailto = applyHref.startsWith("mailto:");
+
   const meta: { label: string; value: string | null }[] = [
     { label: "Location", value: job.location || null },
     { label: "Date Posted", value: formatDate(job.postedDate) },
@@ -137,12 +146,12 @@ export default async function JobDetail({ params }: { params: Promise<{ id: stri
 
           <div className="flex gap-4 mb-8 pb-8 border-b border-gray-200">
             <a
-              href={job.url || "#"}
-              target="_blank"
+              href={applyHref}
+              target={isMailto ? undefined : "_blank"}
               rel="noopener noreferrer"
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
             >
-              Apply Now ↗
+              {isMailto ? "Apply by Email ✉" : "Apply Now ↗"}
             </a>
           </div>
 
