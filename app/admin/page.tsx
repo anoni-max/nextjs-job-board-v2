@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [magicText, setMagicText] = useState("");
   const [drafts, setDrafts] = useState<any[]>([]);
   const [rejectedJobs, setRejectedJobs] = useState<any[]>([]);
+  const [duplicateCount, setDuplicateCount] = useState(0);
   const [editingJob, setEditingJob] = useState<any | null>(null);
   const [editForm, setEditForm] = useState<any>({});
 
@@ -48,9 +49,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchDuplicateCount = async () => {
+    try {
+      const res = await fetch("/api/jobs/duplicates");
+      if (res.ok) {
+        const data = await res.json();
+        setDuplicateCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch duplicate count");
+    }
+  };
+
   useEffect(() => {
     fetchDrafts();
     fetchRejected();
+    fetchDuplicateCount();
   }, []);
 
   async function approveJob(id: string) {
@@ -176,7 +190,6 @@ export default function AdminDashboard() {
     const description = lines.slice(3).join("\n\n");
     const applyUrl = `https://www.google.com/search?q=${encodeURIComponent(title + " " + company + " jobs Kenya")}`;
 
-    // Try to detect an application email in the pasted text
     const emails = magicText.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) || [];
     const applyEmail = emails.find((e: string) => !/unsubscribe|notification|alert|noreply/i.test(e)) || "";
 
@@ -232,7 +245,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h1 className="text-2xl font-extrabold text-gray-900">Admin: Post a Job</h1>
 
-                        <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/admin/talent"
                 className="text-sm text-blue-600 hover:underline font-bold bg-blue-50 px-4 py-2 rounded-lg"
@@ -256,9 +269,21 @@ export default function AdminDashboard() {
 
               <Link
                 href="/admin/duplicates"
-                className="text-sm text-amber-600 hover:underline font-bold bg-amber-50 px-4 py-2 rounded-lg"
+                className="text-sm text-amber-600 hover:underline font-bold bg-amber-50 px-4 py-2 rounded-lg inline-flex items-center gap-1.5"
               >
                 Duplicates
+                {duplicateCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold bg-red-500 text-white rounded-full">
+                    {duplicateCount}
+                  </span>
+                )}
+              </Link>
+
+              <Link
+                href="/admin/settings"
+                className="text-sm text-slate-600 hover:underline font-bold bg-slate-50 px-4 py-2 rounded-lg"
+              >
+                Settings
               </Link>
 
               <button
@@ -271,7 +296,6 @@ export default function AdminDashboard() {
                 Log out
               </button>
             </div>
-
           </div>
 
           {/* Pending Queue */}

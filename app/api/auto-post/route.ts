@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseJobEmail } from "@/lib/fikra";
 import { detectDuplicate, normalizeCompany } from "@/lib/duplicate";
+import { getDuplicateThresholds } from "@/lib/settings";
 
 interface IncomingEmail {
   from?: string;
@@ -96,6 +97,8 @@ export async function POST(req: NextRequest) {
   const applyUrl = parsed.applyUrl || "";
   const applyEmail = parsed.applyEmail || null;
 
+  const thresholds = await getDuplicateThresholds();
+
   // ---- Duplicate detection ----
   let duplicateScore: number | null = null;
   let duplicateOfId: string | null = null;
@@ -127,11 +130,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (best && best.score >= 70) {
+    if (best && best.score >= thresholds.pending) {
       duplicateScore = best.score;
       duplicateOfId = best.id;
       duplicateReasons = best.reasons;
-      duplicateStatus = best.score >= 90 ? "confirmed" : "pending";
+      duplicateStatus = best.score >= thresholds.confirm ? "confirmed" : "pending";
     }
   }
 

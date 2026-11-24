@@ -103,3 +103,9 @@ model JobFeedback {
 
   @@unique([userId, jobId])
 }
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
