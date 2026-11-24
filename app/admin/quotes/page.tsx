@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Copy, CheckCircle2, Share2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Download, Copy, CheckCircle2, Share2 } from "lucide-react";
 
 export default function QuoteStudio() {
   const [quote, setQuote] = useState("Your future is created by what you do today, not tomorrow.");
   const [author, setAuthor] = useState("");
   const [copied, setCopied] = useState(false);
+  const [createdAt, setCreatedAt] = useState<string>("");
   const posterRef = useRef<HTMLDivElement>(null);
+
+  // Capture the date and time when the poster is generated/loaded
+  useEffect(() => {
+    const now = new Date();
+    const formattedDate = now.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    setCreatedAt(formattedDate);
+  }, [quote, author]); // Updates if the user types a new quote or author
 
   function buildText() {
     return `"${quote}"${author ? `\n\n— ${author}` : ""}\n\nYour Work Awaits.\nhttps://kazispot.com\n#KaziSpot #JobsInKenya #Motivation`;
@@ -17,7 +32,7 @@ export default function QuoteStudio() {
   async function downloadPoster() {
     if (!posterRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(posterRef.current, { scale: 2 });
+    const canvas = await html2canvas(posterRef.current, { scale: 2, useCORS: true });
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = image;
@@ -43,7 +58,7 @@ export default function QuoteStudio() {
       let shared = false;
       if (posterRef.current) {
         const html2canvas = (await import("html2canvas")).default;
-        const canvas = await html2canvas(posterRef.current, { scale: 2 });
+        const canvas = await html2canvas(posterRef.current, { scale: 2, useCORS: true });
         const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/png"));
         if (blob) {
           const file = new File([blob], "kazispot-quote.png", { type: "image/png" });
@@ -123,53 +138,80 @@ export default function QuoteStudio() {
           {/* Right: Poster preview */}
           <div className="flex justify-center items-start">
             <div className="bg-gray-200 p-6 rounded-xl border border-gray-300 w-full flex flex-col items-center">
-              <div
-                ref={posterRef}
-                className="w-[540px] h-[540px] shrink-0 bg-gradient-to-br from-[#071022] via-[#0c1c38] to-[#16365f] text-white p-10 flex flex-col relative overflow-hidden"
+              
+              {/* POSTER WRAPPER */}
+              <div 
+                ref={posterRef} 
+                className="w-[540px] h-[540px] shrink-0 relative flex flex-col rounded-xl overflow-hidden shadow-2xl"
+                style={{
+                  boxShadow: '0 0 0 3px #1a5c3a, 0 10px 30px rgba(0,0,0,0.5)',
+                  background: 'linear-gradient(135deg, #081735 0%, #0d2a5c 100%)'
+                }}
               >
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-400 via-blue-500 to-transparent"></div>
-                <div className="absolute -top-16 -right-16 w-56 h-56 bg-sky-500/20 rounded-full"></div>
-                <div className="absolute -bottom-20 -left-12 w-56 h-56 bg-blue-600/10 rounded-full"></div>
+                {/* Decorative Circles */}
+                <div className="absolute -top-16 -right-16 w-64 h-64 bg-white/5 rounded-full z-0"></div>
+                <div className="absolute -bottom-20 -left-12 w-64 h-64 bg-blue-600/10 rounded-full z-0"></div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-extrabold text-base">K</div>
-                    <span className="text-lg font-extrabold tracking-tight">KaziSpot</span>
+                {/* Main Content Area */}
+                <div className="flex-1 p-10 flex flex-col relative z-10">
+                  
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-12">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center font-bold text-lg text-white shadow-sm">K</div>
+                      <span className="text-xl font-bold tracking-tight text-white">KaziSpot</span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-transparent border border-blue-500 text-blue-300 px-4 py-1.5 rounded-full uppercase tracking-widest">
+                      Quote
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold bg-blue-600/20 border border-blue-400/40 text-blue-200 px-3 py-1 rounded-full uppercase tracking-widest">
-                    Quote
-                  </span>
-                </div>
 
-                {/* Quote centered */}
-                <div className="flex-1 flex flex-col items-center justify-center relative z-10 text-center px-2">
-                  <div className="text-sky-400 text-6xl font-serif leading-none mb-2">&ldquo;</div>
-                  <p className="text-2xl font-serif leading-snug break-words">{quote}</p>
-                  {author && (
-                    <p className="text-sky-300 text-sm font-semibold mt-4 tracking-wide">{author}</p>
-                  )}
-                </div>
+                  {/* Quote Area */}
+                  <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
+                    <div className="text-sky-400 text-5xl font-serif leading-none mb-4">&ldquo;</div>
+                    <p className="text-[28px] text-white font-serif leading-snug break-words">
+                      {quote}
+                    </p>
+                    {author && (
+                      <p className="text-sky-300 text-sm font-semibold mt-4 tracking-wide">{author}</p>
+                    )}
+                  </div>
 
-                {/* Footer */}
-                <div className="relative z-10 pt-4 border-t border-white/10 flex items-end justify-between">
-                  <div>
-                    <p className="text-base font-extrabold tracking-tight">Your Work Awaits.</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">www.kazispot.com</p>
+                  {/* Inner Footer */}
+                  <div className="mt-auto">
+                    <div className="border-t border-white/10 pt-4 mb-1">
+                      <p className="text-lg font-bold tracking-tight text-white mb-0.5">Your Work Awaits.</p>
+                      <p className="text-xs text-slate-400">www.kazispot.com</p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Bottom Green Bar (Link & Timestamp) */}
+                <div className="bg-[#14532d] px-6 py-3 flex items-center justify-between relative z-10 w-full mt-auto">
+                  <a 
+                    href="https://kazispot.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#4ade80] hover:text-[#86efac] hover:underline text-[15px] transition-colors"
+                  >
+                    https://kazispot.com
+                  </a>
+                  
+                  {/* Interactive Timestamp */}
+                  <div 
+                    className="text-gray-300 text-xs cursor-default hover:text-white transition-colors group flex items-center gap-1.5"
+                    title={`Poster created on: ${createdAt}`}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70 group-hover:opacity-100">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>{createdAt || "Generating..."}</span>
+                  </div>
+                </div>
+
               </div>
 
-              {/* Clickable link BELOW the poster (not part of the image) */}
-              <a
-                href="https://kazispot.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1.5 text-blue-700 bg-white border border-gray-200 font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-50 transition"
-              >
-                Visit kazispot.com
-                <ExternalLink className="w-4 h-4" />
-              </a>
             </div>
           </div>
         </div>
