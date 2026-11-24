@@ -1,8 +1,15 @@
 import HomeClient from "./HomeClient";
+import Hero from "./components/Hero";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "KaziSpot — Find Jobs in Kenya & Worldwide | Your Next Career Opportunity",
+  description:
+    "Discover job opportunities from trusted employers around the world. Explore local and international vacancies and find roles that match your skills.",
+};
 
 function timeAgo(dateInput?: Date | string | null): string {
   if (!dateInput) return "";
@@ -22,7 +29,16 @@ function timeAgo(dateInput?: Date | string | null): string {
   return `${years} yr ago`;
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+function extractCountry(loc?: string | null): string | null {
+  if (!loc) return null;
+  const parts = loc.split(",").map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+  const candidate = parts[parts.length - 1];
+  if (/remote|online|worldwide|global|hybrid|onsite|on-site|anywhere/i.test(candidate)) return null;
+  return candidate;
+}
+
+export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string; location?: string }> }) {
   let remoteJobs: any[] = [];
   try {
     const res = await fetch("https://remoteok.com/api", { cache: "no-store" });
@@ -44,6 +60,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     });
   } catch (error) {
     console.error("Failed to fetch local jobs:", error);
+  }
+
+  let totalPublished = 0;
+  try {
+    totalPublished = await prisma.job.count({ where: { isApproved: true } });
+  } catch (error) {
+    console.error("Failed to count jobs:", error);
   }
 
   const formattedLocalJobs = localJobs.map((job) => ({
@@ -76,7 +99,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     tags: ["Remote"],
   }));
 
-  // Combine local + remote, then sort newest first
   const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs].sort((a, b) => {
     const ta = new Date(a.postedAt).getTime();
     const tb = new Date(b.postedAt).getTime();
@@ -89,19 +111,37 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   const resolvedParams = await searchParams;
   const searchQuery = resolvedParams.q?.toLowerCase() || "";
+  const locationQuery = resolvedParams.location?.toLowerCase() || "";
 
-  const filteredJobs = searchQuery
-    ? jobsWithTime.filter((job) =>
-        job.position?.toLowerCase().includes(searchQuery) ||
-        job.company?.toLowerCase().includes(searchQuery) ||
-        job.location?.toLowerCase().includes(searchQuery)
-      )
-    : jobsWithTime;
+  const filteredJobs = jobsWithTime.filter((job) => {
+    const matchQ =
+      !searchQuery ||
+      job.position?.toLowerCase().includes(searchQuery) ||
+      job.company?.toLowerCase().includes(searchQuery) ||
+      job.location?.toLowerCase().includes(searchQuery);
+    const matchLoc = !locationQuery || job.location?.toLowerCase().includes(locationQuery);
+    return matchQ && matchLoc;
+  });
+
+  // Real platform stats
+  const employers = new Set(localJobs.map((j) => j.company).filter(Boolean)).size;
+  const countries = new Set<string>();
+  for (const j of [...localJobs, ...remoteJobs]) {
+    const c = extractCountry(j.location);
+    if (c) countries.add(c);
+  }
+
+  const stats = {
+    activeJobs: allJobs.length,
+    employers,
+    jobsPublished: totalPublished,
+    countries: countries.size,
+  };
 
   return (
     <main className="min-h-screen">
+      <Hero stats={stats} />
 
-      {/* Sticky Stats Header (with Join us button) */}
       <StatsHeader
         title="Latest Jobs"
         subtitle="Discover remote and local opportunities"
@@ -110,10 +150,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         showSocialButton
       />
 
-      {/* Main Two-Column Grid */}
-      <section className="max-w-6xl mx-auto px-4 py-8">
+      <section className="max-w-6xl mx-auto px-4 py-8 scroll-mt-36" id="jobs">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
           {/* Left Column: Jobs List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -121,10 +159,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
             </div>
           </div>
 
-          {/* Right Column: Sticky Sidebar */}
+          {/* Right Column: Sidebar */}
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-36 h-fit">
-
-            {/* Sidebar Box 1: Featured Talent */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Featured Talent</h3>
               <p className="text-sm text-gray-600 mb-4">
@@ -135,7 +171,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
               </a>
             </div>
 
-            {/* Sidebar Box 2: Post a Job */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-bold mb-2">Have a role to fill?</h3>
               <p className="text-gray-600 text-sm mb-4">
@@ -145,7 +180,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
                 Post a Job
               </a>
             </div>
-
           </div>
         </div>
       </section>

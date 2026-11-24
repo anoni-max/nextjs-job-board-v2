@@ -15,7 +15,7 @@ export default function StatsHeader({ title, subtitle, count, countLabel, showSo
         
         {/* Left: Title */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-base md:text-2xl font-bold text-gray-900 leading-tight truncate">{title}</h1>
+          <h2 className="text-base md:text-2xl font-bold text-gray-900 leading-tight truncate">{title}</h2>
           <p className="hidden sm:block text-[10px] md:text-sm text-gray-500 mt-0.5 truncate">{subtitle}</p>
         </div>
 
