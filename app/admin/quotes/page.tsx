@@ -10,8 +10,9 @@ export default function QuoteStudio() {
   const [copied, setCopied] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
 
+  // Share/copy only the link — no quote text, no message, no hashtags
   function buildText() {
-    return `"${quote}"${author ? `\n\n— ${author}` : ""}\n\nYour Work Awaits.\nhttps://kazispot.com\n#KaziSpot #JobsInKenya #Motivation`;
+    return "https://kazispot.com";
   }
 
   async function downloadPoster() {
@@ -142,20 +143,17 @@ export default function QuoteStudio() {
                   </span>
                 </div>
 
-                {/* Spacer — pushes the quote to the bottom */}
-                <div className="flex-1"></div>
-
-                {/* Quote at the bottom */}
-                <div className="relative z-10">
-                  <div className="text-sky-400 text-5xl font-serif leading-none mb-2">&ldquo;</div>
+                {/* Quote + author centered */}
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10 text-center px-2">
+                  <div className="text-sky-400 text-6xl font-serif leading-none mb-2">&ldquo;</div>
                   <p className="text-2xl font-serif leading-snug break-words">{quote}</p>
                   {author && (
-                    <p className="text-sky-300 text-sm font-semibold mt-3 tracking-wide">{author}</p>
+                    <p className="text-sky-300 text-sm font-semibold mt-4 tracking-wide">{author}</p>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="relative z-10 mt-6 pt-4 border-t border-white/10 flex items-end justify-between">
+                <div className="relative z-10 pt-4 border-t border-white/10 flex items-end justify-between">
                   <div>
                     <p className="text-base font-extrabold tracking-tight">Your Work Awaits.</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">www.kazispot.com</p>
@@ -163,7 +161,7 @@ export default function QuoteStudio() {
                 </div>
               </div>
 
-              {/* Clickable link BELOW the poster (only thing outside) */}
+              {/* Clickable link BELOW the poster */}
               <a
                 href="https://kazispot.com"
                 target="_blank"
