@@ -76,7 +76,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     tags: ["Remote"],
   }));
 
-  const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs];
+  // Combine local + remote, then sort newest first
+  const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs].sort((a, b) => {
+    const ta = new Date(a.postedAt).getTime();
+    const tb = new Date(b.postedAt).getTime();
+    const av = isNaN(ta) ? 0 : ta;
+    const bv = isNaN(tb) ? 0 : tb;
+    return bv - av;
+  });
 
   const jobsWithTime = allJobs.map((job) => ({ ...job, timeAgo: timeAgo(job.postedAt) }));
 
