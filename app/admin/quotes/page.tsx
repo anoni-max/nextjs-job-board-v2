@@ -2,28 +2,13 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft, Download, Copy, CheckCircle2, Share2, ExternalLink,
-  Sparkles, Loader2, X,
-} from "lucide-react";
+import { ArrowLeft, Download, Copy, CheckCircle2, Share2, ExternalLink } from "lucide-react";
 
 export default function QuoteStudio() {
   const [quote, setQuote] = useState("Your future is created by what you do today, not tomorrow.");
   const [author, setAuthor] = useState("");
   const [copied, setCopied] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
-
-  // AI photo state
-  const [photoPrompt, setPhotoPrompt] = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [genError, setGenError] = useState("");
-
-  // Photo on the poster
-  const [posterImage, setPosterImage] = useState<string | null>(null);
-  const [photoSize, setPhotoSize] = useState(200);
-  const [photoPos, setPhotoPos] = useState({ x: 170, y: 150 });
-  const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
 
   function buildText() {
     return "https://kazispot.com";
@@ -32,7 +17,7 @@ export default function QuoteStudio() {
   async function downloadPoster() {
     if (!posterRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(posterRef.current, { scale: 2, useCORS: true });
+    const canvas = await html2canvas(posterRef.current, { scale: 2 });
     const image = canvas.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = image;
@@ -58,7 +43,7 @@ export default function QuoteStudio() {
       let shared = false;
       if (posterRef.current) {
         const html2canvas = (await import("html2canvas")).default;
-        const canvas = await html2canvas(posterRef.current, { scale: 2, useCORS: true });
+        const canvas = await html2canvas(posterRef.current, { scale: 2 });
         const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/png"));
         if (blob) {
           const file = new File([blob], "kazispot-quote.png", { type: "image/png" });
@@ -80,68 +65,6 @@ export default function QuoteStudio() {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildText())}`, "_blank");
   }
 
-  async function generateImage() {
-    if (!photoPrompt.trim()) return;
-    setGenerating(true);
-    setGenError("");
-    setGeneratedImage(null);
-    try {
-      const res = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: photoPrompt.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok && data.imageUrl) {
-        setGeneratedImage(data.imageUrl);
-      } else {
-        setGenError(data.error || "Image generation failed.");
-      }
-    } catch (e) {
-      setGenError("Network error. Please try again.");
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  function addToPoster() {
-    if (!generatedImage) return;
-    setPosterImage(generatedImage);
-    setPhotoPos({ x: 170, y: 150 });
-    setPhotoSize(200);
-  }
-
-  function removePhoto() {
-    setPosterImage(null);
-  }
-
-  function handlePhotoPointerDown(e: React.PointerEvent<HTMLImageElement>) {
-    e.stopPropagation();
-    const rect = posterRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    dragRef.current = {
-      offsetX: e.clientX - rect.left - photoPos.x,
-      offsetY: e.clientY - rect.top - photoPos.y,
-    };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-
-  function handlePhotoPointerMove(e: React.PointerEvent<HTMLImageElement>) {
-    if (!dragRef.current) return;
-    const rect = posterRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = e.clientX - rect.left - dragRef.current.offsetX;
-    const y = e.clientY - rect.top - dragRef.current.offsetY;
-    setPhotoPos({
-      x: Math.max(0, Math.min(540 - photoSize, x)),
-      y: Math.max(0, Math.min(540 - photoSize, y)),
-    });
-  }
-
-  function handlePhotoPointerUp() {
-    dragRef.current = null;
-  }
-
   return (
     <main className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-6xl mx-auto">
@@ -151,7 +74,7 @@ export default function QuoteStudio() {
               <ArrowLeft className="w-4 h-4" /> Back to Admin
             </Link>
             <h1 className="text-3xl font-extrabold text-gray-900">Quote Studio</h1>
-            <p className="text-gray-500">Write a quote, generate a photo, and turn it into a poster.</p>
+            <p className="text-gray-500">Write a quote and turn it into a poster.</p>
           </div>
         </div>
 
@@ -176,43 +99,6 @@ export default function QuoteStudio() {
                 placeholder="e.g. — KaziSpot"
                 className="w-full px-3 py-2 border rounded-lg text-sm"
               />
-            </div>
-
-            {/* AI Photo Generation */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-600" /> AI Photo
-              </h2>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Describe the photo you want</label>
-              <textarea
-                value={photoPrompt}
-                onChange={(e) => setPhotoPrompt(e.target.value)}
-                rows={3}
-                placeholder="e.g. A confident Kenyan professional in a smart suit, standing in a bright modern office, natural light"
-                className="w-full px-3 py-2 border rounded-lg text-sm mb-3"
-              />
-              <button
-                onClick={generateImage}
-                disabled={generating || !photoPrompt.trim()}
-                className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition disabled:bg-blue-300 flex items-center justify-center gap-2"
-              >
-                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {generating ? "Generating..." : "Generate with AI"}
-              </button>
-
-              {genError && <p className="text-red-500 text-sm mt-2 text-center">{genError}</p>}
-
-              {generatedImage && (
-                <div className="mt-4">
-                  <img src={generatedImage} alt="Generated preview" className="w-full rounded-lg border border-gray-200" />
-                  <button
-                    onClick={addToPoster}
-                    className="w-full mt-2 bg-emerald-600 text-white font-bold py-2.5 rounded-lg hover:bg-emerald-700 transition"
-                  >
-                    Add to Poster
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -245,25 +131,11 @@ export default function QuoteStudio() {
                 <div className="absolute -top-16 -right-16 w-56 h-56 bg-sky-500/20 rounded-full"></div>
                 <div className="absolute -bottom-20 -left-12 w-56 h-56 bg-blue-600/10 rounded-full"></div>
 
-                {/* Generated photo (draggable, behind the text) */}
-                {posterImage && (
-                  <img
-                    src={posterImage}
-                    alt="Generated"
-                    draggable={false}
-                    onPointerDown={handlePhotoPointerDown}
-                    onPointerMove={handlePhotoPointerMove}
-                    onPointerUp={handlePhotoPointerUp}
-                    style={{ left: photoPos.x, top: photoPos.y, width: photoSize, height: photoSize }}
-                    className="absolute z-10 object-cover rounded-2xl border border-white/20 shadow-2xl cursor-move select-none"
-                  />
-                )}
-
                 {/* Header */}
-                <div className="flex items-center justify-between relative z-20">
+                <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-extrabold text-base">K</div>
-                    <span className="text-lg font-extrabold tracking-tight drop-shadow">KaziSpot</span>
+                    <span className="text-lg font-extrabold tracking-tight">KaziSpot</span>
                   </div>
                   <span className="text-[10px] font-bold bg-blue-600/20 border border-blue-400/40 text-blue-200 px-3 py-1 rounded-full uppercase tracking-widest">
                     Quote
@@ -271,45 +143,22 @@ export default function QuoteStudio() {
                 </div>
 
                 {/* Quote + author centered */}
-                <div className="flex-1 flex flex-col items-center justify-center relative z-20 text-center px-2">
-                  <div className="text-sky-400 text-6xl font-serif leading-none mb-2 drop-shadow">&ldquo;</div>
-                  <p className="text-2xl font-serif leading-snug break-words drop-shadow">{quote}</p>
+                <div className="flex-1 flex flex-col items-center justify-center relative z-10 text-center px-2">
+                  <div className="text-sky-400 text-6xl font-serif leading-none mb-2">&ldquo;</div>
+                  <p className="text-2xl font-serif leading-snug break-words">{quote}</p>
                   {author && (
-                    <p className="text-sky-300 text-sm font-semibold mt-4 tracking-wide drop-shadow">{author}</p>
+                    <p className="text-sky-300 text-sm font-semibold mt-4 tracking-wide">{author}</p>
                   )}
                 </div>
 
                 {/* Footer */}
-                <div className="relative z-20 pt-4 border-t border-white/10 flex items-end justify-between">
+                <div className="relative z-10 pt-4 border-t border-white/10 flex items-end justify-between">
                   <div>
-                    <p className="text-base font-extrabold tracking-tight drop-shadow">Your Work Awaits.</p>
+                    <p className="text-base font-extrabold tracking-tight">Your Work Awaits.</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">www.kazispot.com</p>
                   </div>
                 </div>
               </div>
-
-              {/* Photo controls (outside the poster) */}
-              {posterImage && (
-                <div className="mt-4 w-full max-w-[540px]">
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Photo size — {photoSize}px
-                  </label>
-                  <input
-                    type="range"
-                    min={100}
-                    max={420}
-                    value={photoSize}
-                    onChange={(e) => setPhotoSize(Number(e.target.value))}
-                    className="w-full"
-                  />
-                  <button
-                    onClick={removePhoto}
-                    className="mt-2 inline-flex items-center gap-1 text-sm text-red-600 hover:underline font-semibold"
-                  >
-                    <X className="w-4 h-4" /> Remove photo
-                  </button>
-                </div>
-              )}
 
               {/* Clickable link BELOW the poster */}
               <a
