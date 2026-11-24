@@ -12,7 +12,7 @@ export default function StatsHeader({ title, subtitle, count, countLabel, showSo
   return (
     <section className="bg-white border-b border-gray-200 py-2.5 md:py-6 px-2 md:px-4 sticky top-14 md:top-16 z-40 shadow-sm">
       <div className="max-w-6xl mx-auto flex flex-row items-center gap-1.5 md:gap-6">
-        
+
         {/* Left: Title */}
         <div className="flex-1 min-w-0">
           <h2 className="text-base md:text-2xl font-bold text-gray-900 leading-tight truncate">{title}</h2>
@@ -30,21 +30,11 @@ export default function StatsHeader({ title, subtitle, count, countLabel, showSo
           </Link>
         )}
 
-        {/* Right: Stats */}
-        <div className="flex items-center gap-1 md:gap-6 shrink-0">
+        {/* Right: Single real stat */}
+        <div className="flex items-center shrink-0">
           <div className="text-center">
             <div className="text-xs md:text-2xl font-extrabold text-gray-900 leading-none">{count}</div>
             <div className="text-[7px] md:text-[10px] uppercase tracking-wide text-gray-500 font-semibold mt-0.5">{countLabel}</div>
-          </div>
-          <div className="w-px h-4 md:h-8 bg-gray-300"></div>
-          <div className="text-center">
-            <div className="text-xs md:text-2xl font-extrabold text-gray-900 leading-none">2,353+</div>
-            <div className="text-[7px] md:text-[10px] uppercase tracking-wide text-gray-500 font-semibold mt-0.5">Employers</div>
-          </div>
-          <div className="w-px h-4 md:h-8 bg-gray-300"></div>
-          <div className="text-center">
-            <div className="text-xs md:text-2xl font-extrabold text-gray-900 leading-none">9,005+</div>
-            <div className="text-[7px] md:text-[10px] uppercase tracking-wide text-gray-500 font-semibold mt-0.5">Jobs This Year</div>
           </div>
         </div>
 
