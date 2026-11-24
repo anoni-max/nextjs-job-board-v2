@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Copy, CheckCircle2, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Copy, CheckCircle2, Share2, ExternalLink } from "lucide-react";
 
 export default function QuoteStudio() {
   const [quote, setQuote] = useState("Your future is created by what you do today, not tomorrow.");
@@ -11,7 +11,7 @@ export default function QuoteStudio() {
   const posterRef = useRef<HTMLDivElement>(null);
 
   function buildText() {
-    return `"${quote}"${author ? `\n\n— ${author}` : ""}\n\nYour Work Awaits.\n#KaziSpot #JobsInKenya #Motivation`;
+    return `"${quote}"${author ? `\n\n— ${author}` : ""}\n\nYour Work Awaits.\nhttps://kazispot.com\n#KaziSpot #JobsInKenya #Motivation`;
   }
 
   async function downloadPoster() {
@@ -122,7 +122,7 @@ export default function QuoteStudio() {
 
           {/* Right: Poster preview */}
           <div className="flex justify-center items-start">
-            <div className="bg-gray-200 p-6 rounded-xl border border-gray-300 w-full flex justify-center">
+            <div className="bg-gray-200 p-6 rounded-xl border border-gray-300 w-full flex flex-col items-center">
               <div
                 ref={posterRef}
                 className="w-[540px] h-[540px] shrink-0 bg-gradient-to-br from-[#071022] via-[#0c1c38] to-[#16365f] text-white p-10 flex flex-col relative overflow-hidden"
@@ -159,6 +159,17 @@ export default function QuoteStudio() {
                   </div>
                 </div>
               </div>
+
+              {/* Clickable link BELOW the poster (not part of the image) */}
+              <a
+                href="https://kazispot.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 text-blue-700 bg-white border border-gray-200 font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-50 transition"
+              >
+                Visit kazispot.com
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
