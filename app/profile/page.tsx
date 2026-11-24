@@ -60,9 +60,13 @@ export default function ProfilePage() {
               cvConsent: Boolean(data.cvConsent),
             });
           }
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setStatus("❌ " + (data.error || "Failed to load profile."));
         }
       } catch (e) {
         console.error("Failed to load profile", e);
+        setStatus("❌ Network error while loading profile.");
       } finally {
         setLoading(false);
       }
@@ -79,8 +83,12 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (res.ok) setStatus("✅ Profile saved.");
-      else setStatus("❌ Failed to save.");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setStatus("✅ Profile saved.");
+      } else {
+        setStatus("❌ " + (data.error || "Failed to save."));
+      }
     } catch (e) {
       setStatus("❌ Network error.");
     } finally {
