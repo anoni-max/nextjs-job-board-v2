@@ -8,6 +8,8 @@ import { ChevronDown } from "lucide-react";
 
 const jobSeekerMenu = [
   { label: "Browse Jobs", href: "/" },
+  { label: "Jobs Matched For You", href: "/matches" },
+  { label: "My Profile", href: "/profile" },
   { label: "Career Toolkit", href: "/career-toolkit" },
   { label: "Pricing", href: "/pricing" },
   { label: "Salary Guide", href: "/salary-guide" },
