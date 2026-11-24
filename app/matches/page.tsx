@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, MapPin, Clock, Briefcase, Save as SaveIcon, ExternalLink, Mail } from "lucide-react";
+import {
+  Sparkles, MapPin, Clock, Briefcase, Save as SaveIcon,
+  ExternalLink, Mail, ThumbsUp, ThumbsDown,
+} from "lucide-react";
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<any[]>([]);
@@ -12,6 +15,7 @@ export default function MatchesPage() {
 
   useEffect(() => {
     loadMatches();
+    loadSaved();
   }, []);
 
   async function loadMatches() {
@@ -20,15 +24,24 @@ export default function MatchesPage() {
     try {
       const res = await fetch("/api/jobs/matches");
       const data = await res.json();
-      if (res.ok) {
-        setMatches(data.matches || []);
-      } else {
-        setError(data.error || "Failed to load matches.");
-      }
+      if (res.ok) setMatches(data.matches || []);
+      else setError(data.error || "Failed to load matches.");
     } catch (e) {
       setError("Network error.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadSaved() {
+    try {
+      const res = await fetch("/api/jobs/saved");
+      if (res.ok) {
+        const data = await res.json();
+        setSavedIds(new Set((data.jobs || []).map((j: any) => j.id)));
+      }
+    } catch (e) {
+      /* ignore */
     }
   }
 
@@ -39,6 +52,17 @@ export default function MatchesPage() {
       body: JSON.stringify({ jobId: id }),
     });
     setSavedIds((prev) => new Set(prev).add(id));
+  }
+
+  async function sendFeedback(id: string, rating: string) {
+    await fetch("/api/jobs/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId: id, rating }),
+    });
+    if (rating === "not-relevant") {
+      setMatches((prev) => prev.filter((j) => j.id !== id));
+    }
   }
 
   function applyHref(job: any) {
@@ -116,7 +140,7 @@ export default function MatchesPage() {
                     </p>
                   )}
 
-                  <div className="flex flex-wrap gap-2 mt-4">
+                  <div className="flex flex-wrap items-center gap-2 mt-4">
                     <a
                       href={apply.href}
                       target={apply.mailto ? undefined : "_blank"}
@@ -130,6 +154,20 @@ export default function MatchesPage() {
                       className="bg-white text-gray-700 text-sm font-bold px-4 py-2 rounded-lg border border-gray-300 hover:bg-slate-50 transition inline-flex items-center gap-1"
                     >
                       <SaveIcon className="w-4 h-4" /> {savedIds.has(job.id) ? "Saved" : "Save"}
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(job.id, "relevant")}
+                      title="This is relevant"
+                      className="text-gray-400 hover:text-green-600 transition p-2"
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(job.id, "not-relevant")}
+                      title="Not relevant — hide this"
+                      className="text-gray-400 hover:text-red-600 transition p-2"
+                    >
+                      <ThumbsDown className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

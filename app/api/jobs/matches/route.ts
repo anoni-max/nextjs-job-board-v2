@@ -19,8 +19,24 @@ export async function GET() {
     return NextResponse.json({ error: "Please create your profile first" }, { status: 400 });
   }
 
+  // Jobs the user marked as "not relevant"
+  const hidden = await prisma.jobFeedback.findMany({
+    where: { userId: user.id, rating: "not-relevant" },
+    select: { jobId: true },
+  });
+  const hiddenIds = new Set(hidden.map((h) => h.jobId));
+
+  const where: any = {
+    isApproved: true,
+    rejected: false,
+    expiresAt: { gt: new Date() },
+  };
+  if (hiddenIds.size > 0) {
+    where.id = { notIn: Array.from(hiddenIds) };
+  }
+
   const jobs = await prisma.job.findMany({
-    where: { isApproved: true, rejected: false, expiresAt: { gt: new Date() } },
+    where,
     orderBy: { createdAt: "desc" },
     take: 20,
   });
