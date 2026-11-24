@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseJobEmail } from "@/lib/fikra";
+import { detectDuplicate, normalizeCompany } from "@/lib/duplicate";
 
 interface IncomingEmail {
   from?: string;
@@ -16,6 +17,30 @@ function parseDate(value?: string): Date | null {
   if (!value) return null;
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d;
+}
+
+async function findCandidateJobs(title: string, company: string) {
+  const normCompany = normalizeCompany(company);
+  const companyToken = normCompany.split(" ")[0] || "";
+  const titleToken = (title || "").split(/\s+/)[0] || "";
+
+  const or: any[] = [];
+  if (normCompany) or.push({ companyNormalized: normCompany });
+  if (companyToken) or.push({ company: { contains: companyToken, mode: "insensitive" } });
+  if (titleToken) or.push({ title: { contains: titleToken, mode: "insensitive" } });
+
+  if (or.length === 0) return [];
+
+  try {
+    return await prisma.job.findMany({
+      where: { rejected: false, OR: or },
+      take: 8,
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (e) {
+    console.error("Candidate search failed:", e);
+    return [];
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -64,15 +89,60 @@ export async function POST(req: NextRequest) {
   }
 
   const deadline = parseDate(parsed.deadline);
+  const title = parsed.title;
+  const company = parsed.company;
+  const location = parsed.location || "Kenya";
+  const description = parsed.description || "";
+  const applyUrl = parsed.applyUrl || "";
+  const applyEmail = parsed.applyEmail || null;
+
+  // ---- Duplicate detection ----
+  let duplicateScore: number | null = null;
+  let duplicateOfId: string | null = null;
+  let duplicateReasons: string | null = null;
+  let duplicateStatus = "none";
+
+  const candidates = await findCandidateJobs(title, company);
+
+  if (candidates.length > 0) {
+    let best: { id: string; score: number; reasons: string } | null = null;
+    for (const cand of candidates) {
+      try {
+        const result = await detectDuplicate(
+          { title, company, location, description, applyUrl },
+          {
+            title: cand.title,
+            company: cand.company,
+            location: cand.location,
+            description: cand.description,
+            applyUrl: cand.applyUrl,
+          }
+        );
+        if (!best || result.score > best.score) {
+          best = { id: cand.id, score: result.score, reasons: result.reasons };
+        }
+        if (best && best.score >= 98) break;
+      } catch (e) {
+        console.error("Duplicate comparison failed:", e);
+      }
+    }
+
+    if (best && best.score >= 70) {
+      duplicateScore = best.score;
+      duplicateOfId = best.id;
+      duplicateReasons = best.reasons;
+      duplicateStatus = best.score >= 90 ? "confirmed" : "pending";
+    }
+  }
 
   const job = await prisma.job.create({
     data: {
-      title: parsed.title,
-      company: parsed.company,
-      location: parsed.location || "Kenya",
-      description: parsed.description || "",
-      applyUrl: parsed.applyUrl || "",
-      applyEmail: parsed.applyEmail || null,
+      title,
+      company,
+      location,
+      description,
+      applyUrl,
+      applyEmail,
       expiresAt: deadline || new Date(Date.now() + DEFAULT_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
       salary: parsed.salary || null,
       employmentType: parsed.employmentType || null,
@@ -84,8 +154,19 @@ export async function POST(req: NextRequest) {
       rawEmail: rawText,
       isApproved: false,
       rejected: false,
+      companyNormalized: normalizeCompany(company) || null,
+      duplicateScore,
+      duplicateOfId,
+      duplicateReasons,
+      duplicateStatus,
     },
   });
 
-  return NextResponse.json({ created: true, jobId: job.id, title: job.title });
+  return NextResponse.json({
+    created: true,
+    jobId: job.id,
+    title: job.title,
+    duplicateStatus,
+    duplicateScore,
+  });
 }

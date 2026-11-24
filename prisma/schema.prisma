@@ -8,41 +8,47 @@ datasource db {
 }
 
 model Job {
-  id               String    @id @default(cuid())
-  title            String
-  company          String
-  location         String
-  description      String
-  applyUrl         String
-  applyEmail       String?
-  expiresAt        DateTime
-  salary           String?
-  employmentType   String?
-  positions        String?
-  postedDate       DateTime?
-  qualifications   String?
-  responsibilities String?
-  sourceEmailId    String?   @unique
-  rawEmail         String?
-  isApproved       Boolean   @default(false)
-  rejected         Boolean   @default(false)
-  marketed         Boolean   @default(false)
-  publishedAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @default(now()) @updatedAt
+  id                String    @id @default(cuid())
+  title             String
+  company           String
+  location          String
+  description       String
+  applyUrl          String
+  applyEmail        String?
+  expiresAt         DateTime
+  salary            String?
+  employmentType    String?
+  positions         String?
+  postedDate        DateTime?
+  qualifications    String?
+  responsibilities  String?
+  sourceEmailId     String?   @unique
+  rawEmail          String?
+  isApproved        Boolean   @default(false)
+  rejected          Boolean   @default(false)
+  marketed          Boolean   @default(false)
+  publishedAt       DateTime?
+  companyNormalized String?
+  duplicateScore    Float?
+  duplicateOfId     String?
+  duplicateReasons  String?
+  duplicateStatus   String    @default("none")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
 
   @@index([isApproved, rejected, publishedAt])
+  @@index([companyNormalized])
 }
 
 model Candidate {
-  id            String   @id @default(cuid())
-  name          String
-  email         String
-  phone         String
-  skills        String
-  education     String
-  bio           String?
-  createdAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  skills    String
+  education String
+  bio       String?
+  createdAt DateTime @default(now())
 }
 
 model User {
@@ -54,4 +60,46 @@ model User {
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  profile Profile?
+}
+
+model Profile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  education           String?
+  qualifications      String?
+  workExperience      String?
+  skills              String?
+  certifications      String?
+  preferredIndustries String?
+  preferredTitles     String?
+  preferredLocations  String?
+  preferredCountries  String?
+  expectedSalary      String?
+  employmentType      String?
+  workPreference      String?
+  cvConsent           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model JobFeedback {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  rating    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, jobId])
 }

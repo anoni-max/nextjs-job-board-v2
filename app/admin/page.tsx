@@ -232,7 +232,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h1 className="text-2xl font-extrabold text-gray-900">Admin: Post a Job</h1>
 
-            <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/admin/talent"
                 className="text-sm text-blue-600 hover:underline font-bold bg-blue-50 px-4 py-2 rounded-lg"
@@ -254,6 +254,13 @@ export default function AdminDashboard() {
                 Quote Studio
               </Link>
 
+              <Link
+                href="/admin/duplicates"
+                className="text-sm text-amber-600 hover:underline font-bold bg-amber-50 px-4 py-2 rounded-lg"
+              >
+                Duplicates
+              </Link>
+
               <button
                 onClick={async () => {
                   await fetch("/api/auth/logout", { method: "POST" });
@@ -264,6 +271,7 @@ export default function AdminDashboard() {
                 Log out
               </button>
             </div>
+
           </div>
 
           {/* Pending Queue */}
