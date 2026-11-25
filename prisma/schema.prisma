@@ -125,3 +125,13 @@ model Notification {
 
   @@index([userId, read])
 }
+
+model JobAd {
+  id        String   @id @default(cuid())
+  imageData String
+  caption   String?
+  applyUrl  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

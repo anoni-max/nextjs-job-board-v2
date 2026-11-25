@@ -1,5 +1,6 @@
 import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
+import JobAds from "./components/JobAds";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
 
@@ -123,7 +124,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     return matchQ && matchLoc;
   });
 
-  // Real platform stats
   const employers = new Set(localJobs.map((j) => j.company).filter(Boolean)).size;
   const countries = new Set<string>();
   for (const j of [...localJobs, ...remoteJobs]) {
@@ -142,6 +142,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     <main className="min-h-screen">
       <Hero stats={stats} />
 
+      <JobAds />
+
       <StatsHeader
         title="Latest Jobs"
         subtitle="Discover remote and local opportunities"
@@ -152,14 +154,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
       <section className="max-w-6xl mx-auto px-4 py-8 scroll-mt-36" id="jobs">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Jobs List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <HomeClient jobs={filteredJobs} />
             </div>
           </div>
 
-          {/* Right Column: Sidebar */}
           <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-36 h-fit">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Featured Talent</h3>
