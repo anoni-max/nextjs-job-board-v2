@@ -5,6 +5,12 @@ import { scoreJobs } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
 
+const STOPWORDS = new Set([
+  "and", "the", "with", "for", "that", "this", "are", "you",
+  "have", "has", "was", "were", "can", "will", "from", "into",
+  "their", "there", "your", "not", "but",
+]);
+
 function truncate(s?: string | null, max = 150): string {
   if (!s) return "";
   const t = s.trim();
@@ -21,7 +27,38 @@ function sinceFor(time: string): Date | null {
   if (time === "24h") return new Date(now - 24 * 3600 * 1000);
   if (time === "48h") return new Date(now - 48 * 3600 * 1000);
   if (time === "week") return new Date(now - 7 * 24 * 3600 * 1000);
-  return null; // "all"
+  return null;
+}
+
+function extractKeywords(profile: any): string[] {
+  const raw = [
+    profile.skills,
+    profile.preferredTitles,
+    profile.preferredIndustries,
+    profile.qualifications,
+    profile.education,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return Array.from(
+    new Set(
+      raw
+        .split(/[^a-z0-9+#]+/)
+        .map((w) => w.trim())
+        .filter((w) => w.length >= 3 && !STOPWORDS.has(w))
+    )
+  );
+}
+
+function keywordScore(job: any, keywords: string[]): number {
+  const text = `${job.title} ${job.description} ${job.qualifications} ${job.responsibilities} ${job.company}`.toLowerCase();
+  let score = 0;
+  for (const kw of keywords) {
+    if (text.includes(kw)) score += 1;
+  }
+  return score;
 }
 
 export async function GET(req: Request) {
@@ -70,6 +107,31 @@ export async function GET(req: Request) {
     return NextResponse.json({ matches: [], scanned: 0, time });
   }
 
+  // ---- Step 1: fast keyword pre-filter (no AI) ----
+  const keywords = extractKeywords(profile);
+  let candidates: any[] = [];
+
+  if (keywords.length > 0) {
+    const scored = jobs.map((j) => ({ j, k: keywordScore(j, keywords) }));
+    const matched = scored.filter((s) => s.k > 0).sort((a, b) => b.k - a.k);
+    candidates = matched.slice(0, 15).map((s) => s.j);
+
+    // Fill up to 15 with the newest jobs if we have too few matches
+    if (candidates.length < 15) {
+      const ids = new Set(candidates.map((j) => j.id));
+      for (const j of jobs) {
+        if (!ids.has(j.id)) {
+          candidates.push(j);
+          ids.add(j.id);
+        }
+        if (candidates.length >= 15) break;
+      }
+    }
+  } else {
+    candidates = jobs.slice(0, 15);
+  }
+
+  // ---- Step 2: AI semantic scoring on just those candidates ----
   const profileSummary = {
     education: profile.education,
     qualifications: profile.qualifications,
@@ -85,7 +147,7 @@ export async function GET(req: Request) {
     workPreference: profile.workPreference,
   };
 
-  const jobList = jobs.map((j) => ({
+  const jobList = candidates.map((j) => ({
     id: j.id,
     title: j.title,
     company: j.company,
@@ -111,7 +173,7 @@ export async function GET(req: Request) {
 
   const scoreMap = new Map(scored.map((s) => [s.jobId, s]));
 
-  const combined = jobs
+  const combined = candidates
     .map((j) => {
       const s = scoreMap.get(j.id);
       return {
