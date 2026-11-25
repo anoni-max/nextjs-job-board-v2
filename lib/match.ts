@@ -34,6 +34,10 @@ export interface MatchResult {
 
 const BATCH_SIZE = 25;
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
   const results: MatchResult[] = [];
 
@@ -41,6 +45,10 @@ export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): P
     const batch = jobs.slice(i, i + BATCH_SIZE);
     const batchResults = await scoreBatch(profile, batch);
     results.push(...batchResults);
+
+    if (i + BATCH_SIZE < jobs.length) {
+      await sleep(800); // avoid hitting Groq rate limits
+    }
   }
 
   return results;

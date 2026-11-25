@@ -34,7 +34,6 @@ export async function GET() {
     where.id = { notIn: Array.from(hiddenIds) };
   }
 
-  // Scan ALL active jobs
   const jobs = await prisma.job.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -75,9 +74,12 @@ export async function GET() {
   let scored;
   try {
     scored = await scoreJobs(profileSummary, jobList);
-  } catch (e) {
+  } catch (e: any) {
     console.error("Matching failed:", e);
-    return NextResponse.json({ error: "Matching failed. Please try again." }, { status: 502 });
+    return NextResponse.json(
+      { error: "Matching failed: " + (e?.message || "Unknown error") },
+      { status: 502 }
+    );
   }
 
   const scoreMap = new Map(scored.map((s) => [s.jobId, s]));
