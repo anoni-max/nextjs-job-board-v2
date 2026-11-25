@@ -16,16 +16,16 @@ function formatDate(d?: Date | null): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function getPageNumbers(current: number, total: number): (number | "…")[] {
+function getPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const set = new Set<number>([1, total, current - 1, current, current + 1]);
   const nums = Array.from(set)
     .filter((n) => n >= 1 && n <= total)
     .sort((a, b) => a - b);
-  const result: (number | "…")[] = [];
+  const result: (number | "...")[] = [];
   let prev = 0;
   for (const n of nums) {
-    if (n - prev > 1) result.push("…");
+    if (n - prev > 1) result.push("...");
     result.push(n);
     prev = n;
   }
@@ -60,7 +60,10 @@ export default async function JobsPage({
 
   const orderBy = sort === "oldest" ? { createdAt: "asc" } : { createdAt: "desc" };
 
-      prisma.jobAd.findMany({
+  const [jobs, total, ads, featured] = await Promise.all([
+    prisma.job.findMany({ where, orderBy, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+    prisma.job.count({ where }),
+    prisma.jobAd.findMany({
       where: {
         active: true,
         placement: { in: ["jobs", "sidebar"] },
@@ -72,7 +75,8 @@ export default async function JobsPage({
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
       take: 6,
     }),
-
+    prisma.job.findMany({ where: activeWhere, orderBy: { createdAt: "desc" }, take: 3 }),
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageNumbers = getPageNumbers(page, totalPages);
@@ -196,8 +200,8 @@ export default async function JobsPage({
                 )}
 
                 {pageNumbers.map((n, i) =>
-                  n === "…" ? (
-                    <span key={`e${i}`} className="px-2 text-gray-400">…</span>
+                  n === "..." ? (
+                    <span key={`e${i}`} className="px-2 text-gray-400">...</span>
                   ) : (
                     <Link
                       key={n}
@@ -234,16 +238,16 @@ export default async function JobsPage({
                     <div key={ad.id} className="relative bg-white rounded-lg border border-gray-200 overflow-hidden">
                       {ad.applyUrl ? (
                         <a href={ad.applyUrl} target="_blank" rel="noopener noreferrer" className="block">
-                          <img src={ad.imageData} alt={ad.caption || "Advertisement"} className="w-full h-auto" loading="lazy" />
+                          <img src={ad.imageData} alt={ad.title || ad.caption || "Advertisement"} className="w-full h-auto" loading="lazy" />
                         </a>
                       ) : (
-                        <img src={ad.imageData} alt={ad.caption || "Advertisement"} className="w-full h-auto" loading="lazy" />
+                        <img src={ad.imageData} alt={ad.title || ad.caption || "Advertisement"} className="w-full h-auto" loading="lazy" />
                       )}
                       <span className="absolute top-1 right-1 bg-slate-900/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
                         Sponsored
                       </span>
-                      {ad.caption && (
-                        <p className="hidden sm:block px-2 py-1 text-[10px] text-gray-600 truncate">{ad.caption}</p>
+                      {(ad.title || ad.caption) && (
+                        <p className="hidden sm:block px-2 py-1 text-[10px] text-gray-600 truncate">{ad.title || ad.caption}</p>
                       )}
                     </div>
                   ))}
