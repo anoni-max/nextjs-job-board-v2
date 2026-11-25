@@ -5,6 +5,12 @@ import { scoreJobs } from "@/lib/match";
 
 export const dynamic = "force-dynamic";
 
+function truncate(s?: string | null, max = 150): string {
+  if (!s) return "";
+  const t = s.trim();
+  return t.length > max ? t.slice(0, max) + "..." : t;
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.email) {
@@ -58,6 +64,7 @@ export async function GET() {
     workPreference: profile.workPreference,
   };
 
+  // Send only short text to stay within Groq's token limits
   const jobList = jobs.map((j) => ({
     id: j.id,
     title: j.title,
@@ -65,9 +72,9 @@ export async function GET() {
     location: j.location,
     salary: j.salary,
     employmentType: j.employmentType,
-    qualifications: j.qualifications,
-    responsibilities: j.responsibilities,
-    description: j.description,
+    qualifications: truncate(j.qualifications, 100),
+    responsibilities: truncate(j.responsibilities, 100),
+    description: truncate(j.description, 150),
     expiresAt: j.expiresAt,
   }));
 

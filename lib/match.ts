@@ -32,10 +32,17 @@ export interface MatchResult {
   reasons: string;
 }
 
-const BATCH_SIZE = 25;
+const BATCH_SIZE = 15;
+const MAX_RETRIES = 3;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfter(text: string): number {
+  const m = text.match(/try again in ([\d.]+)s/);
+  if (m) return Math.ceil(parseFloat(m[1]) * 1000);
+  return 20000;
 }
 
 export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
@@ -47,14 +54,14 @@ export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): P
     results.push(...batchResults);
 
     if (i + BATCH_SIZE < jobs.length) {
-      await sleep(800); // avoid hitting Groq rate limits
+      await sleep(2000);
     }
   }
 
   return results;
 }
 
-async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
+async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[], attempt = 0): Promise<MatchResult[]> {
   if (jobs.length === 0) return [];
 
   const baseUrl = (process.env.FIKRA_BASE_URL ?? "https://api.fikraapi.co.ke/v1").replace(/\/$/, "");
@@ -93,8 +100,14 @@ async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[]): Promise
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Fikra error ${res.status}: ${err}`);
+    const errText = await res.text();
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      const wait = parseRetryAfter(errText);
+      console.warn(`Rate limited, retrying in ${wait}ms...`);
+      await sleep(wait);
+      return scoreBatch(profile, jobs, attempt + 1);
+    }
+    throw new Error(`Fikra error ${res.status}: ${errText}`);
   }
 
   const data = await res.json();
