@@ -9,7 +9,7 @@ export default function FeedbackSection() {
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
-  const [website, setWebsite] = useState(""); // honeypot
+  const [website, setWebsite] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -42,13 +42,12 @@ export default function FeedbackSection() {
   return (
     <section className="max-w-6xl mx-auto px-4 py-12">
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-extrabold text-gray-900 text-center mb-2">What People Say About KaziSpot</h2>
+        <h2 className="text-2xl font-extrabold text-gray-900 text-center mb-2">Share Your Feedback</h2>
         <p className="text-gray-500 text-center mb-8">
           Your feedback matters! Share your experience with KaziSpot and help us improve our service.
         </p>
 
         <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          {/* Honeypot (hidden from humans) */}
           <input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
 
           <div>

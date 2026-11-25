@@ -2,6 +2,7 @@ import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
 import Testimonials from "./components/Testimonials";
+import FeedbackSection from "./components/FeedbackSection";
 import FeedbackWidget from "./components/FeedbackWidget";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
@@ -143,7 +144,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
       {/* 4. Testimonials carousel */}
       <Testimonials />
 
-      {/* 5. Floating feedback button (opens popup) */}
+      {/* 5. Bottom feedback section */}
+      <FeedbackSection />
+
+      {/* 6. Floating feedback button */}
       <FeedbackWidget />
     </main>
   );
