@@ -260,12 +260,19 @@ export default function AdminDashboard() {
                 Marketing Studio
               </Link>
 
-                            <Link
+              <Link
                 href="/admin/job-ads"
                 className="text-sm text-cyan-600 hover:underline font-bold bg-cyan-50 px-4 py-2 rounded-lg"
               >
                 Job Ads
               </Link>
+              <Link
+                href="/admin/feedback"
+                className="text-sm text-indigo-600 hover:underline font-bold bg-indigo-50 px-4 py-2 rounded-lg"
+              >
+                Feedback
+              </Link>
+
 
 
               <Link

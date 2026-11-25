@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Save, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+
 
 const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm";
 
@@ -20,6 +22,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const router = useRouter();
+
 
   const [form, setForm] = useState({
     education: "",
@@ -73,7 +77,7 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  async function handleSave(e: React.FormEvent) {
+   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setStatus("");
@@ -85,7 +89,10 @@ export default function ProfilePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setStatus("✅ Profile saved.");
+        setStatus("✅ Profile saved. Finding your matches…");
+        setTimeout(() => {
+          router.push("/matches");
+        }, 800);
       } else {
         setStatus("❌ " + (data.error || "Failed to save."));
       }
@@ -95,6 +102,7 @@ export default function ProfilePage() {
       setSaving(false);
     }
   }
+
 
   const set = (key: string, value: string | boolean) => setForm((f) => ({ ...f, [key]: value }));
 

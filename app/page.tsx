@@ -1,6 +1,8 @@
 import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
+import Testimonials from "./components/Testimonials";
+import FeedbackSection from "./components/FeedbackSection";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
 
@@ -52,11 +54,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
   let localJobs: any[] = [];
   try {
     localJobs = await prisma.job.findMany({
-      where: {
-        expiresAt: { gt: new Date() },
-        isApproved: true,
-        rejected: false,
-      },
+      where: { expiresAt: { gt: new Date() }, isApproved: true, rejected: false },
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
@@ -103,9 +101,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
   const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs].sort((a, b) => {
     const ta = new Date(a.postedAt).getTime();
     const tb = new Date(b.postedAt).getTime();
-    const av = isNaN(ta) ? 0 : ta;
-    const bv = isNaN(tb) ? 0 : tb;
-    return bv - av;
+    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
   });
 
   const jobsWithTime = allJobs.map((job) => ({ ...job, timeAgo: timeAgo(job.postedAt) }));
@@ -140,10 +136,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   return (
     <main className="min-h-screen">
+      {/* 1. Hero */}
       <Hero stats={stats} />
 
+      {/* 2. Image Job Advertisements (carousel) */}
       <JobAds />
 
+      {/* 3. Latest Jobs */}
       <StatsHeader
         title="Latest Jobs"
         subtitle="Discover remote and local opportunities"
@@ -183,6 +182,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
           </div>
         </div>
       </section>
+
+      {/* 4. Testimonials carousel */}
+      <Testimonials />
+
+      {/* 5. Feedback form */}
+      <FeedbackSection />
     </main>
   );
 }
