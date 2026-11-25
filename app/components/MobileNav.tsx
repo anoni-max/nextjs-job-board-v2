@@ -10,11 +10,11 @@ const jobSeekerMenu = [
   { label: "Browse Jobs", href: "/" },
   { label: "Jobs Matched For You", href: "/matches" },
   { label: "My Profile", href: "/profile" },
+  { label: "Job Alerts", href: "/alerts" },
   { label: "Career Toolkit", href: "/career-toolkit" },
   { label: "Pricing", href: "/pricing" },
   { label: "Salary Guide", href: "/salary-guide" },
   { label: "My subscription", href: "/subscription" },
-  { label: "Job Alerts", href: "/job-alerts" },
 ];
 
 const employerMenu = [
