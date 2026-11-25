@@ -29,12 +29,27 @@ function compressImage(file: File, maxWidth = 1400, quality = 0.8): Promise<stri
   });
 }
 
+function toDateStr(d?: string | Date | null): string {
+  if (!d) return "";
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
 export default function JobAdsAdmin() {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [title, setTitle] = useState("");
   const [caption, setCaption] = useState("");
+  const [description, setDescription] = useState("");
   const [applyUrl, setApplyUrl] = useState("");
+  const [placement, setPlacement] = useState("homepage");
+  const [priority, setPriority] = useState(0);
+  const [startDate, setStartDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [imageData, setImageData] = useState<string | null>(null);
+
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -81,6 +96,20 @@ export default function JobAdsAdmin() {
     }
   }
 
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setCaption("");
+    setDescription("");
+    setApplyUrl("");
+    setPlacement("homepage");
+    setPriority(0);
+    setStartDate("");
+    setExpiryDate("");
+    setImageData(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   async function addAd() {
     if (!imageData) {
       setStatus("❌ Please choose an image.");
@@ -92,7 +121,7 @@ export default function JobAdsAdmin() {
       const res = await fetch("/api/job-ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageData, caption, applyUrl }),
+        body: JSON.stringify({ imageData, title, caption, description, applyUrl, placement, priority, startDate, expiryDate }),
       });
       if (res.ok) {
         setStatus("✅ Ad added.");
@@ -114,7 +143,7 @@ export default function JobAdsAdmin() {
     setBusy(true);
     setStatus("");
     try {
-      const body: any = { id: editingId, caption, applyUrl };
+      const body: any = { id: editingId, title, caption, description, applyUrl, placement, priority, startDate, expiryDate };
       if (imageData) body.imageData = imageData;
       const res = await fetch("/api/job-ads", {
         method: "PATCH",
@@ -158,17 +187,15 @@ export default function JobAdsAdmin() {
 
   function editAd(ad: any) {
     setEditingId(ad.id);
+    setTitle(ad.title || "");
     setCaption(ad.caption || "");
+    setDescription(ad.description || "");
     setApplyUrl(ad.applyUrl || "");
+    setPlacement(ad.placement || "homepage");
+    setPriority(ad.priority || 0);
+    setStartDate(toDateStr(ad.startDate));
+    setExpiryDate(toDateStr(ad.expiryDate));
     setImageData(null);
-  }
-
-  function resetForm() {
-    setEditingId(null);
-    setCaption("");
-    setApplyUrl("");
-    setImageData(null);
-    if (fileRef.current) fileRef.current.value = "";
   }
 
   return (
@@ -178,7 +205,7 @@ export default function JobAdsAdmin() {
           <ArrowLeft className="w-4 h-4" /> Back to Admin
         </Link>
         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Image Job Advertisements</h1>
-        <p className="text-gray-500 mb-8">Upload job ad images that appear on the homepage.</p>
+        <p className="text-gray-500 mb-8">Upload and manage sponsored job ad images.</p>
 
         {/* Form */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-8">
@@ -186,24 +213,52 @@ export default function JobAdsAdmin() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Image (JPG, PNG or WebP)</label>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                className="w-full text-sm"
-              />
+              <label className="block text-sm font-bold text-gray-700 mb-1">Image (JPG, PNG or WebP) *</label>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} className="w-full text-sm" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Title</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} placeholder="Ad title" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Caption (short)</label>
+                <input value={caption} onChange={(e) => setCaption(e.target.value)} className={inputCls} placeholder="Short caption" />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Caption (optional)</label>
-              <input value={caption} onChange={(e) => setCaption(e.target.value)} className={inputCls} placeholder="Short caption" />
+              <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={inputCls} placeholder="Optional description" />
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Application link / URL (optional)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Target URL (click destination)</label>
               <input value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} className={inputCls} placeholder="https://..." />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Placement</label>
+                <select value={placement} onChange={(e) => setPlacement(e.target.value)} className={inputCls}>
+                  <option value="homepage">Homepage carousel</option>
+                  <option value="jobs">Jobs page sidebar</option>
+                  <option value="sidebar">Sidebar</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Priority (higher shows first)</label>
+                <input type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Start date (optional)</label>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Expiry date (optional)</label>
+                <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className={inputCls} />
+              </div>
             </div>
 
             {imageData && (
@@ -242,18 +297,19 @@ export default function JobAdsAdmin() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {ads.map((ad) => (
               <div key={ad.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <img src={ad.imageData} alt={ad.caption || "Ad"} className="w-full h-auto bg-slate-50" />
-                <div className="p-3 space-y-2">
-                  {ad.caption && <p className="text-sm text-gray-600">{ad.caption}</p>}
+                <img src={ad.imageData} alt={ad.title || ad.caption || "Ad"} className="w-full h-auto bg-slate-50" />
+                <div className="p-3 space-y-1.5 text-sm">
+                  {(ad.title || ad.caption) && <p className="font-bold text-gray-900 truncate">{ad.title || ad.caption}</p>}
+                  <p className="text-xs text-gray-400">
+                    {ad.placement} · Priority {ad.priority}
+                  </p>
+                  {ad.expiryDate && (
+                    <p className="text-xs text-gray-400">Expires: {new Date(ad.expiryDate).toLocaleDateString()}</p>
+                  )}
                   {ad.applyUrl && <p className="text-xs text-gray-400 break-all">{ad.applyUrl}</p>}
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => toggleActive(ad)}
-                      className={`text-xs font-bold px-2.5 py-1 rounded ${
-                        ad.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
+                  <div className="flex items-center gap-2 pt-1">
+                    <button onClick={() => toggleActive(ad)} className={`text-xs font-bold px-2.5 py-1 rounded ${ad.active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                       {ad.active ? <Eye className="w-3.5 h-3.5 inline mr-1" /> : <EyeOff className="w-3.5 h-3.5 inline mr-1" />}
                       {ad.active ? "Active" : "Inactive"}
                     </button>

@@ -60,12 +60,19 @@ export default async function JobsPage({
 
   const orderBy = sort === "oldest" ? { createdAt: "asc" } : { createdAt: "desc" };
 
-  const [jobs, total, ads, featured] = await Promise.all([
-    prisma.job.findMany({ where, orderBy, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
-    prisma.job.count({ where }),
-    prisma.jobAd.findMany({ where: { active: true }, orderBy: { createdAt: "desc" }, take: 6 }),
-    prisma.job.findMany({ where: activeWhere, orderBy: { createdAt: "desc" }, take: 3 }),
-  ]);
+      prisma.jobAd.findMany({
+      where: {
+        active: true,
+        placement: { in: ["jobs", "sidebar"] },
+        AND: [
+          { OR: [{ startDate: null }, { startDate: { lte: new Date() } }] },
+          { OR: [{ expiryDate: null }, { expiryDate: { gte: new Date() } }] },
+        ],
+      },
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+      take: 6,
+    }),
+
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageNumbers = getPageNumbers(page, totalPages);

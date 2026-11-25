@@ -127,13 +127,21 @@ model Notification {
 }
 
 model JobAd {
-  id        String   @id @default(cuid())
-  imageData String
-  caption   String?
-  applyUrl  String?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  imageData   String
+  caption     String?
+  title       String?
+  description String?
+  applyUrl    String?
+  placement   String    @default("homepage")
+  priority    Int       @default(0)
+  startDate   DateTime?
+  expiryDate  DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([active, placement])
 }
 
 model Feedback {
