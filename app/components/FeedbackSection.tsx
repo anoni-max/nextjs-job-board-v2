@@ -1,81 +1,119 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Send } from "lucide-react";
-
-const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm";
+import { Star, Send, CheckCircle2 } from "lucide-react";
 
 export default function FeedbackSection() {
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
-  const [website, setWebsite] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
+  const [hoverRating, setHoverRating] = useState(0);
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
 
-  async function submit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setStatus("");
+    if (!name.trim() || !comment.trim()) {
+      setStatus("error");
+      setMessage("Please fill in your name and feedback.");
+      return;
+    }
+    setStatus("submitting");
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, comment, rating, website }),
+        body: JSON.stringify({ name: name.trim(), comment: comment.trim(), rating }),
       });
-      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setStatus("✅ Thank you! Your feedback has been submitted for review.");
+        setStatus("success");
+        setMessage("Thank you! Your feedback has been submitted for review.");
         setName("");
         setComment("");
         setRating(0);
       } else {
-        setStatus("❌ " + (data.error || "Failed to submit."));
+        const data = await res.json().catch(() => ({}));
+        setStatus("error");
+        setMessage(data.error || "Something went wrong. Please try again.");
       }
-    } catch (e) {
-      setStatus("❌ Network error.");
-    } finally {
-      setBusy(false);
+    } catch {
+      setStatus("error");
+      setMessage("Network error. Please try again.");
     }
   }
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-12">
-      <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-extrabold text-gray-900 text-center mb-2">Share Your Feedback</h2>
-        <p className="text-gray-500 text-center mb-8">
+    <section className="bg-white py-16 px-4" id="feedback">
+      <div className="max-w-2xl mx-auto text-center">
+        <h2 className="text-3xl font-extrabold text-gray-900 mb-3">
+          What People Say About KaziSpot
+        </h2>
+        <p className="text-gray-600 mb-8">
           Your feedback matters! Share your experience with KaziSpot and help us improve our service.
         </p>
 
-        <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-          <input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
-
+        <form onSubmit={handleSubmit} className="bg-slate-50 border border-gray-200 rounded-2xl p-6 text-left space-y-5">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} placeholder="Your name" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Your feedback *</label>
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)} required rows={4} className={inputCls} placeholder="Tell us about your experience..." />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Your feedback</label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={4}
+              placeholder="Tell us about your experience..."
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Rating (optional)</label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <button key={i} type="button" onClick={() => setRating(i)} className="p-1">
-                  <Star className={`w-6 h-6 ${i <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setRating(n)}
+                  onMouseEnter={() => setHoverRating(n)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-1"
+                  aria-label={`${n} star`}
+                >
+                  <Star
+                    className={`w-7 h-7 ${
+                      n <= (hoverRating || rating) ? "fill-amber-400 text-amber-400" : "text-gray-300"
+                    }`}
+                  />
                 </button>
               ))}
             </div>
           </div>
 
-          <button type="submit" disabled={busy} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition disabled:bg-blue-300 inline-flex items-center justify-center gap-2">
-            <Send className="w-4 h-4" /> {busy ? "Submitting..." : "Submit Feedback"}
+          <button
+            type="submit"
+            disabled={status === "submitting"}
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition disabled:bg-blue-400 flex items-center justify-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            {status === "submitting" ? "Submitting..." : "Submit Feedback"}
           </button>
 
-          {status && <p className="text-center font-medium">{status}</p>}
+          {status === "success" && (
+            <p className="flex items-center gap-2 text-green-600 font-medium text-sm">
+              <CheckCircle2 className="w-4 h-4" /> {message}
+            </p>
+          )}
+          {status === "error" && (
+            <p className="text-red-600 text-sm font-medium">{message}</p>
+          )}
         </form>
       </div>
     </section>

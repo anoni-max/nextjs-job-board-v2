@@ -1,3 +1,4 @@
+import FeedbackSection from "./components/FeedbackSection";
 import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
@@ -7,6 +8,8 @@ import Testimonials from "./components/Testimonials";
 import FeedbackWidget from "./components/FeedbackWidget";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
+
+
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +97,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
       {/* 6. Testimonials */}
       <Testimonials />
+
+      
+      <FeedbackSection />
+    {/* ... footer / rest of page ... */}
+
 
       {/* 7. Floating feedback button */}
       <FeedbackWidget />
