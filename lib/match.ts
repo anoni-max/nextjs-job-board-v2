@@ -55,9 +55,11 @@ export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): P
           role: "system",
           content:
             "You are a job matching engine. Given a candidate's profile and a list of jobs, score how well each job matches the profile from 0 to 100 using SEMANTIC matching (not just keywords). " +
+            "Be strict and honest: give a high score (70+) only when the job genuinely fits the candidate's skills, qualifications, experience and preferences. " +
+            "Give clearly unrelated jobs a low score (below 40) or 0. For example, a Procurement, Finance or Administrative role is NOT a match for an Electrical Technician profile. " +
             "Return ONLY valid JSON in this exact shape: {\"matches\": [{\"jobId\": \"...\", \"score\": 0-100, \"reasons\": \"short explanation\"}]}. " +
             "Consider qualifications, skills, experience, responsibilities, industry, location preference, employment type, salary expectation, and remote/onsite preference. " +
-            "A high score means a strong match. Do not present scores as a guarantee of employment.",
+            "Do not present scores as a guarantee of employment.",
         },
         {
           role: "user",

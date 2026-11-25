@@ -19,7 +19,6 @@ export async function GET() {
     return NextResponse.json({ error: "Please create your profile first" }, { status: 400 });
   }
 
-  // Jobs the user marked as "not relevant"
   const hidden = await prisma.jobFeedback.findMany({
     where: { userId: user.id, rating: "not-relevant" },
     select: { jobId: true },
@@ -38,7 +37,7 @@ export async function GET() {
   const jobs = await prisma.job.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 30,
   });
 
   if (jobs.length === 0) {
@@ -100,7 +99,7 @@ export async function GET() {
         reasons: s ? s.reasons : "",
       };
     })
-    .filter((j) => j.score > 0)
+    .filter((j) => j.score >= 50)
     .sort((a, b) => b.score - a.score);
 
   return NextResponse.json({ matches: combined });
