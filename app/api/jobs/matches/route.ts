@@ -107,7 +107,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ matches: [], scanned: 0, time });
   }
 
-  // ---- Step 1: fast keyword pre-filter (no AI) ----
   const keywords = extractKeywords(profile);
   let candidates: any[] = [];
 
@@ -116,7 +115,6 @@ export async function GET(req: Request) {
     const matched = scored.filter((s) => s.k > 0).sort((a, b) => b.k - a.k);
     candidates = matched.slice(0, 15).map((s) => s.j);
 
-    // Fill up to 15 with the newest jobs if we have too few matches
     if (candidates.length < 15) {
       const ids = new Set(candidates.map((j) => j.id));
       for (const j of jobs) {
@@ -131,7 +129,6 @@ export async function GET(req: Request) {
     candidates = jobs.slice(0, 15);
   }
 
-  // ---- Step 2: AI semantic scoring on just those candidates ----
   const profileSummary = {
     education: profile.education,
     qualifications: profile.qualifications,
@@ -160,15 +157,20 @@ export async function GET(req: Request) {
     expiresAt: j.expiresAt,
   }));
 
+  // AI scoring, with keyword fallback if rate-limited
   let scored;
   try {
     scored = await scoreJobs(profileSummary, jobList);
   } catch (e: any) {
-    console.error("Matching failed:", e);
-    return NextResponse.json(
-      { error: "Matching failed: " + (e?.message || "Unknown error") },
-      { status: 502 }
-    );
+    console.error("AI matching failed, using keyword fallback:", e?.message || e);
+    scored = candidates.map((j) => {
+      const matches = keywordScore(j, keywords);
+      return {
+        jobId: j.id,
+        score: matches === 0 ? 0 : Math.min(90, 35 + matches * 12),
+        reasons: "Matched your skills and keywords",
+      };
+    });
   }
 
   const scoreMap = new Map(scored.map((s) => [s.jobId, s]));

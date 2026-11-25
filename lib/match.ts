@@ -33,7 +33,7 @@ export interface MatchResult {
 }
 
 const BATCH_SIZE = 15;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 2;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,7 +42,7 @@ function sleep(ms: number) {
 function parseRetryAfter(text: string): number {
   const m = text.match(/try again in ([\d.]+)s/);
   if (m) return Math.ceil(parseFloat(m[1]) * 1000);
-  return 20000;
+  return 15000;
 }
 
 export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
@@ -54,7 +54,7 @@ export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): P
     results.push(...batchResults);
 
     if (i + BATCH_SIZE < jobs.length) {
-      await sleep(2000);
+      await sleep(1000);
     }
   }
 
@@ -66,7 +66,8 @@ async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[], attempt 
 
   const baseUrl = (process.env.FIKRA_BASE_URL ?? "https://api.fikraapi.co.ke/v1").replace(/\/$/, "");
   const apiKey = process.env.FIKRA_API_KEY;
-  const model = process.env.FIKRA_MODEL ?? "openai/gpt-oss-20b";
+  // Use a DIFFERENT model than the email pipeline so they don't share the same rate limit
+  const model = process.env.MATCH_MODEL || "qwen/qwen3.8-27b";
 
   if (!apiKey) throw new Error("FIKRA_API_KEY is not set");
 
@@ -103,7 +104,6 @@ async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[], attempt 
     const errText = await res.text();
     if (res.status === 429 && attempt < MAX_RETRIES) {
       const wait = parseRetryAfter(errText);
-      console.warn(`Rate limited, retrying in ${wait}ms...`);
       await sleep(wait);
       return scoreBatch(profile, jobs, attempt + 1);
     }
