@@ -34,14 +34,14 @@ export async function GET() {
     where.id = { notIn: Array.from(hiddenIds) };
   }
 
+  // Scan ALL active jobs
   const jobs = await prisma.job.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    take: 30,
   });
 
   if (jobs.length === 0) {
-    return NextResponse.json({ matches: [] });
+    return NextResponse.json({ matches: [], scanned: 0 });
   }
 
   const profileSummary = {
@@ -99,8 +99,8 @@ export async function GET() {
         reasons: s ? s.reasons : "",
       };
     })
-    .filter((j) => j.score >= 50)
+    .filter((j) => j.score >= 40)
     .sort((a, b) => b.score - a.score);
 
-  return NextResponse.json({ matches: combined });
+  return NextResponse.json({ matches: combined, scanned: jobs.length });
 }

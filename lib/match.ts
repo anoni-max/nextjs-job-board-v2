@@ -32,7 +32,21 @@ export interface MatchResult {
   reasons: string;
 }
 
+const BATCH_SIZE = 25;
+
 export async function scoreJobs(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
+  const results: MatchResult[] = [];
+
+  for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+    const batch = jobs.slice(i, i + BATCH_SIZE);
+    const batchResults = await scoreBatch(profile, batch);
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
+async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[]): Promise<MatchResult[]> {
   if (jobs.length === 0) return [];
 
   const baseUrl = (process.env.FIKRA_BASE_URL ?? "https://api.fikraapi.co.ke/v1").replace(/\/$/, "");
