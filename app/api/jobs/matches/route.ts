@@ -11,7 +11,23 @@ function truncate(s?: string | null, max = 150): string {
   return t.length > max ? t.slice(0, max) + "..." : t;
 }
 
-export async function GET() {
+function sinceFor(time: string): Date | null {
+  const now = Date.now();
+  if (time === "today") {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  if (time === "24h") return new Date(now - 24 * 3600 * 1000);
+  if (time === "48h") return new Date(now - 48 * 3600 * 1000);
+  if (time === "week") return new Date(now - 7 * 24 * 3600 * 1000);
+  return null; // "all"
+}
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const time = url.searchParams.get("time") || "week";
+
   const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -40,13 +56,18 @@ export async function GET() {
     where.id = { notIn: Array.from(hiddenIds) };
   }
 
+  const since = sinceFor(time);
+  if (since) {
+    where.createdAt = { gte: since };
+  }
+
   const jobs = await prisma.job.findMany({
     where,
     orderBy: { createdAt: "desc" },
   });
 
   if (jobs.length === 0) {
-    return NextResponse.json({ matches: [], scanned: 0 });
+    return NextResponse.json({ matches: [], scanned: 0, time });
   }
 
   const profileSummary = {
@@ -64,7 +85,6 @@ export async function GET() {
     workPreference: profile.workPreference,
   };
 
-  // Send only short text to stay within Groq's token limits
   const jobList = jobs.map((j) => ({
     id: j.id,
     title: j.title,
@@ -111,5 +131,5 @@ export async function GET() {
     .filter((j) => j.score >= 40)
     .sort((a, b) => b.score - a.score);
 
-  return NextResponse.json({ matches: combined, scanned: jobs.length });
+  return NextResponse.json({ matches: combined, scanned: jobs.length, time });
 }

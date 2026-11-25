@@ -7,25 +7,39 @@ import {
   ExternalLink, Mail, ThumbsUp, ThumbsDown,
 } from "lucide-react";
 
+const timeOptions = [
+  { value: "today", label: "Today" },
+  { value: "24h", label: "Last 24 hours" },
+  { value: "48h", label: "Last 48 hours" },
+  { value: "week", label: "This week" },
+  { value: "all", label: "All time" },
+];
+
 export default function MatchesPage() {
+  const [time, setTime] = useState("week");
   const [matches, setMatches] = useState<any[]>([]);
+  const [scanned, setScanned] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadMatches();
+    loadMatches(time);
     loadSaved();
   }, []);
 
-  async function loadMatches() {
+  async function loadMatches(timeParam: string) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/jobs/matches");
+      const res = await fetch(`/api/jobs/matches?time=${timeParam}`);
       const data = await res.json();
-      if (res.ok) setMatches(data.matches || []);
-      else setError(data.error || "Failed to load matches.");
+      if (res.ok) {
+        setMatches(data.matches || []);
+        setScanned(data.scanned || 0);
+      } else {
+        setError(data.error || "Failed to load matches.");
+      }
     } catch (e) {
       setError("Network error.");
     } finally {
@@ -43,6 +57,11 @@ export default function MatchesPage() {
     } catch (e) {
       /* ignore */
     }
+  }
+
+  function changeTime(t: string) {
+    setTime(t);
+    loadMatches(t);
   }
 
   async function saveJob(id: string) {
@@ -85,9 +104,20 @@ export default function MatchesPage() {
   return (
     <main className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900">Jobs Matched For You</h1>
-          <p className="text-gray-500 mt-1">Personalised recommendations based on your profile.</p>
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900">Jobs Matched For You</h1>
+            <p className="text-gray-500 mt-1">Personalised recommendations based on your profile.</p>
+          </div>
+          <select
+            value={time}
+            onChange={(e) => changeTime(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {timeOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         </div>
 
         {loading ? (
@@ -104,7 +134,10 @@ export default function MatchesPage() {
           </div>
         ) : matches.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-            <p className="text-gray-500">No matches yet. Update your profile to get better recommendations.</p>
+            <p className="text-gray-500">
+              No strong matches found {scanned > 0 ? `among ${scanned} jobs scanned` : ""} in this period.
+            </p>
+            <p className="text-gray-400 text-sm mt-2">Try a wider time range or add more skills to your profile.</p>
             <Link href="/profile" className="inline-block mt-4 text-blue-600 font-bold hover:underline">Update profile</Link>
           </div>
         ) : (
