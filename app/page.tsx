@@ -2,7 +2,7 @@ import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
 import Testimonials from "./components/Testimonials";
-import FeedbackSection from "./components/FeedbackSection";
+import FeedbackWidget from "./components/FeedbackWidget";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
 
@@ -42,33 +42,17 @@ function extractCountry(loc?: string | null): string | null {
 }
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string; location?: string }> }) {
-  let remoteJobs: any[] = [];
-  try {
-    const res = await fetch("https://remoteok.com/api", { cache: "no-store" });
-    const data = await res.json();
-    remoteJobs = Array.isArray(data) ? data.slice(1, 20) : [];
-  } catch (error) {
-    console.error("Failed to fetch remote jobs:", error);
-  }
+  const activeWhere = { isApproved: true, rejected: false, expiresAt: { gt: new Date() } };
 
-  let localJobs: any[] = [];
-  try {
-    localJobs = await prisma.job.findMany({
-      where: { expiresAt: { gt: new Date() }, isApproved: true, rejected: false },
-      orderBy: { createdAt: "desc" },
-    });
-  } catch (error) {
-    console.error("Failed to fetch local jobs:", error);
-  }
+  const [jobs, activeCount, publishedCount, employerRows, locationRows] = await Promise.all([
+    prisma.job.findMany({ where: activeWhere, orderBy: { createdAt: "desc" }, take: 3 }),
+    prisma.job.count({ where: activeWhere }),
+    prisma.job.count({ where: { isApproved: true } }),
+    prisma.job.findMany({ where: activeWhere, distinct: ["company"], select: { company: true } }),
+    prisma.job.findMany({ where: activeWhere, select: { location: true } }),
+  ]);
 
-  let totalPublished = 0;
-  try {
-    totalPublished = await prisma.job.count({ where: { isApproved: true } });
-  } catch (error) {
-    console.error("Failed to count jobs:", error);
-  }
-
-  const formattedLocalJobs = localJobs.map((job) => ({
+  const formattedJobs = jobs.map((job) => ({
     id: job.id,
     position: job.title,
     company: job.company,
@@ -79,58 +63,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     salary: job.salary,
     employmentType: job.employmentType,
     postedAt: job.postedDate || job.createdAt,
+    timeAgo: timeAgo(job.postedDate || job.createdAt),
     isLocal: true,
     tags: ["Local", "Featured"],
   }));
 
-  const formattedRemoteJobs = remoteJobs.map((job: any) => ({
-    id: String(job.id),
-    position: job.position || job.title || "Remote Job",
-    company: job.company || "Remote Company",
-    location: job.location || "Remote",
-    description: job.description,
-    url: job.url || job.apply_url,
-    applyEmail: null,
-    salary: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : null,
-    employmentType: null,
-    postedAt: job.date || job.created_at,
-    isLocal: false,
-    tags: ["Remote"],
-  }));
-
-  const allJobs = [...formattedLocalJobs, ...formattedRemoteJobs].sort((a, b) => {
-    const ta = new Date(a.postedAt).getTime();
-    const tb = new Date(b.postedAt).getTime();
-    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
-  });
-
-  const jobsWithTime = allJobs.map((job) => ({ ...job, timeAgo: timeAgo(job.postedAt) }));
-
-  const resolvedParams = await searchParams;
-  const searchQuery = resolvedParams.q?.toLowerCase() || "";
-  const locationQuery = resolvedParams.location?.toLowerCase() || "";
-
-  const filteredJobs = jobsWithTime.filter((job) => {
-    const matchQ =
-      !searchQuery ||
-      job.position?.toLowerCase().includes(searchQuery) ||
-      job.company?.toLowerCase().includes(searchQuery) ||
-      job.location?.toLowerCase().includes(searchQuery);
-    const matchLoc = !locationQuery || job.location?.toLowerCase().includes(locationQuery);
-    return matchQ && matchLoc;
-  });
-
-  const employers = new Set(localJobs.map((j) => j.company).filter(Boolean)).size;
   const countries = new Set<string>();
-  for (const j of [...localJobs, ...remoteJobs]) {
-    const c = extractCountry(j.location);
+  for (const r of locationRows) {
+    const c = extractCountry(r.location);
     if (c) countries.add(c);
   }
 
   const stats = {
-    activeJobs: allJobs.length,
-    employers,
-    jobsPublished: totalPublished,
+    activeJobs: activeCount,
+    employers: employerRows.length,
+    jobsPublished: publishedCount,
     countries: countries.size,
   };
 
@@ -142,11 +89,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
       {/* 2. Image Job Advertisements (carousel) */}
       <JobAds />
 
-      {/* 3. Latest Jobs */}
+      {/* 3. Latest 3 Jobs */}
       <StatsHeader
         title="Latest Jobs"
         subtitle="Discover remote and local opportunities"
-        count={allJobs.length}
+        count={activeCount}
         countLabel="Active Jobs"
         showSocialButton
       />
@@ -155,7 +102,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <HomeClient jobs={filteredJobs} />
+              <HomeClient jobs={formattedJobs} />
+
+              {/* Explore All button right after the 3 jobs */}
+              <div className="p-5">
+                <a
+                  href="/jobs"
+                  className="block w-full text-center bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition"
+                >
+                  Explore All Opportunities →
+                </a>
+              </div>
             </div>
           </div>
 
@@ -186,8 +143,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
       {/* 4. Testimonials carousel */}
       <Testimonials />
 
-      {/* 5. Feedback form */}
-      <FeedbackSection />
+      {/* 5. Floating feedback button (opens popup) */}
+      <FeedbackWidget />
     </main>
   );
 }
