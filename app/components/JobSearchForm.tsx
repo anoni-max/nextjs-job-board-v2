@@ -26,7 +26,6 @@ export default function JobsSearchForm({
     const type = String(data.get("type") || "");
     const sort = String(data.get("sort") || "newest");
 
-    // Search performed
     trackEvent("search", {
       search_term: q,
       search_location: location,
@@ -34,7 +33,6 @@ export default function JobsSearchForm({
       sort_order: sort,
     });
 
-    // Filter used (only when at least one filter is active)
     if (location || type || sort !== "newest") {
       trackEvent("filter_used", {
         filter_location: location,
