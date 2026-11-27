@@ -12,6 +12,16 @@ const nextConfig = {
       { protocol: "https", hostname: "ui-avatars.com" },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "kazispot.com" }],
+        destination: "https://www.kazispot.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

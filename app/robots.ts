@@ -16,6 +16,6 @@ export default function robots(): MetadataRoute.Robots {
         "/dashboard",
       ],
     },
-    sitemap: "https://kazispot.com/sitemap.xml"
+    sitemap: "https://www.kazispot.com/sitemap.xml",
   };
 }

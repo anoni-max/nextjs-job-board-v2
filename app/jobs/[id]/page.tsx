@@ -7,7 +7,7 @@ import ApplyButton from "@/app/components/ApplyButton";
 
 export const dynamic = "force-dynamic";
 
-const SITE = "https://kazispot.com";
+const SITE = "https://www.kazispot.com";
 
 const getJob = cache(async (id: string) => {
   return prisma.job.findFirst({
