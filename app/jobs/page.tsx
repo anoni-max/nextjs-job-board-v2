@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import {
-  MapPin, Briefcase, Clock, ExternalLink, Mail,
+  MapPin, Briefcase, Clock,
   ChevronLeft, ChevronRight,
 } from "lucide-react";
+import JobsSearchForm from "@/app/components/JobsSearchForm";
+import ApplyButton from "@/app/components/ApplyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -91,38 +93,18 @@ export default async function JobsPage({
     return `/jobs?${params.toString()}`;
   }
 
-  const inputCls =
-    "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white";
-
   return (
     <main className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-6">All Jobs</h1>
 
-        {/* Search + filters (full width) */}
-        <form
-          method="get"
-          action="/jobs"
-          className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-        >
-          <input name="q" defaultValue={p.q || ""} placeholder="Job title, skill or company" className={inputCls} />
-          <input name="location" defaultValue={p.location || ""} placeholder="Location or country" className={inputCls} />
-          <select name="type" defaultValue={p.type || ""} className={inputCls}>
-            <option value="">All employment types</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-            <option value="Internship">Internship</option>
-            <option value="Remote">Remote</option>
-          </select>
-          <select name="sort" defaultValue={p.sort || "newest"} className={inputCls}>
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-          </select>
-          <button type="submit" className="sm:col-span-2 lg:col-span-4 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition">
-            Search Jobs
-          </button>
-        </form>
+        {/* Search + filters (full width) — now tracked */}
+        <JobsSearchForm
+          initialQ={p.q || ""}
+          initialLocation={p.location || ""}
+          initialType={p.type || ""}
+          initialSort={p.sort || "newest"}
+        />
 
         {/* Two-column layout */}
         <div className="grid grid-cols-[minmax(0,1fr)_110px] sm:grid-cols-[minmax(0,1fr)_180px] lg:grid-cols-[minmax(0,1fr)_320px] gap-3 sm:gap-6 items-start">
@@ -142,10 +124,10 @@ export default async function JobsPage({
                   const url = (job.applyUrl || "").trim();
                   const email = (job.applyEmail || "").trim();
                   const apply = url
-                    ? { href: url.startsWith("http") ? url : `https://${url}`, mailto: false }
+                    ? { href: url.startsWith("http") ? url : `https://${url}`, mailto: false, method: "url" as const }
                     : email
-                    ? { href: `mailto:${email}?subject=${encodeURIComponent(`Application for ${job.title}`)}`, mailto: true }
-                    : { href: `https://www.google.com/search?q=${encodeURIComponent(`${job.title} ${job.company} jobs Kenya`)}`, mailto: false };
+                    ? { href: `mailto:${email}?subject=${encodeURIComponent(`Application for ${job.title}`)}`, mailto: true, method: "email" as const }
+                    : { href: `https://www.google.com/search?q=${encodeURIComponent(`${job.title} ${job.company} jobs Kenya`)}`, mailto: false, method: "search" as const };
 
                   return (
                     <div key={job.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
@@ -171,14 +153,15 @@ export default async function JobsPage({
                         >
                           View Details
                         </Link>
-                        <a
+                        <ApplyButton
                           href={apply.href}
-                          target={apply.mailto ? undefined : "_blank"}
-                          rel="noopener noreferrer"
+                          label="Apply"
+                          external={!apply.mailto}
+                          jobId={job.id}
+                          title={job.title}
+                          method={apply.method}
                           className="bg-blue-600 text-white text-sm font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition inline-flex items-center gap-1"
-                        >
-                          {apply.mailto ? <Mail className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />} Apply
-                        </a>
+                        />
                       </div>
                     </div>
                   );

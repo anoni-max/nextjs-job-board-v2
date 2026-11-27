@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MapPin, Clock, ExternalLink, Mail, Check } from "lucide-react";
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 export default function HomeClient({ jobs }: { jobs: any[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -38,19 +39,26 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
     const url = (job.url || "").trim();
     const email = (job.applyEmail || "").trim();
     if (url) {
-      return { href: url.startsWith("http") ? url : `https://${url}`, isMailto: false, label: "Apply" };
+      return {
+        href: url.startsWith("http") ? url : `https://${url}`,
+        isMailto: false,
+        label: "Apply",
+        method: "url" as const,
+      };
     }
     if (email) {
       return {
         href: `mailto:${email}?subject=${encodeURIComponent(`Application for ${job.position} at ${job.company}`)}`,
         isMailto: true,
         label: "Apply by Email",
+        method: "email" as const,
       };
     }
     return {
       href: `https://www.google.com/search?q=${encodeURIComponent(`${job.position} ${job.company} jobs Kenya`)}`,
       isMailto: false,
       label: "Apply",
+      method: "search" as const,
     };
   }
 
@@ -104,6 +112,13 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                       href={apply.href}
                       target={apply.isMailto ? undefined : "_blank"}
                       rel="noopener noreferrer"
+                      onClick={() =>
+                        trackEvent("apply_click", {
+                          job_id: job.id,
+                          job_title: job.position,
+                          application_method: apply.method,
+                        })
+                      }
                       className="bg-blue-600 text-white text-xs font-semibold px-3.5 py-1 rounded-md hover:bg-blue-700 transition shadow-sm inline-flex items-center gap-1 whitespace-nowrap"
                     >
                       {apply.isMailto ? <Mail className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
