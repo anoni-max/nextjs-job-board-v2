@@ -11,6 +11,12 @@ export interface DuplicateResult {
   reasons: string;
 }
 
+const MAX_RETRIES = 2;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function normalizeCompany(name: string): string {
   return name
     .toLowerCase()
@@ -19,59 +25,65 @@ export function normalizeCompany(name: string): string {
     .trim();
 }
 
-export async function detectDuplicate(
+// Scores ALL candidate jobs in ONE Gemini call (fast, no timeout)
+export async function scoreDuplicateCandidates(
   incoming: JobForCompare,
-  existing: JobForCompare
-): Promise<DuplicateResult> {
-  const baseUrl = (process.env.FIKRA_BASE_URL ?? "https://api.fikraapi.co.ke/v1").replace(/\/$/, "");
-  const apiKey = process.env.FIKRA_API_KEY;
-  const model = process.env.FIKRA_MODEL ?? "openai/gpt-oss-20b";
+  candidates: (JobForCompare & { id: string })[],
+  attempt = 0
+): Promise<{ id: string; score: number; reasons: string }[]> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.DUP_MODEL || "gemini-3.8-flash";
 
-  if (!apiKey) throw new Error("FIKRA_API_KEY is not set");
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You compare two job listings and decide if they are duplicates. " +
-            "Return ONLY valid JSON with keys: score (number 0-100) and reasons (string, 1-2 short sentences explaining why). " +
-            "Consider employer name (including aliases and abbreviations), job title, location, description, and application URL. " +
-            "Score 90-100 = very likely duplicate; 70-89 = possible duplicate; below 70 = different vacancies. " +
-            "Be careful: similar titles (e.g. 'Electrical Technician' vs 'Electrical Maintenance Technician') are NOT automatically duplicates unless the employer, location and duties clearly match.",
+  const prompt =
+    "You compare a NEW job listing against a list of EXISTING job listings and decide which (if any) are duplicates of the new job. " +
+    "Return ONLY valid JSON in this exact shape: {\"results\": [{\"id\": \"...\", \"score\": 0-100, \"reasons\": \"short explanation\"}]}. " +
+    "Include a result ONLY for existing jobs that score 60 or above (omit clearly different jobs). " +
+    "Consider employer name (including aliases and abbreviations), job title, location, description, and application URL. " +
+    "Score 90-100 = very likely duplicate; 70-89 = possible duplicate; below 70 = different vacancy. " +
+    "Be careful: similar titles (e.g. 'Electrical Technician' vs 'Electrical Maintenance Technician') are NOT automatically duplicates unless the employer, location and duties clearly match.\n\n" +
+    "NEW JOB:\n" + JSON.stringify(incoming) + "\n\n" +
+    "EXISTING JOBS:\n" + JSON.stringify(candidates);
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0,
         },
-        {
-          role: "user",
-          content: JSON.stringify({
-            jobA: incoming,
-            jobB: existing,
-          }),
-        },
-      ],
-      temperature: 0,
-    }),
-  });
+      }),
+    }
+  );
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Fikra error ${res.status}: ${err}`);
+    const errText = await res.text();
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      await sleep(20000);
+      return scoreDuplicateCandidates(incoming, candidates, attempt + 1);
+    }
+    throw new Error(`Gemini error ${res.status}: ${errText}`);
   }
 
   const data = await res.json();
-  const content: string = data.choices?.[0]?.message?.content ?? "";
-  const cleaned = content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  const parsed = JSON.parse(cleaned);
+  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
 
-  return {
-    score: typeof parsed.score === "number" ? parsed.score : 0,
-    reasons: typeof parsed.reasons === "string" ? parsed.reasons : "",
-  };
+  if (!cleaned) throw new Error("Gemini returned empty response");
+
+  const parsed = JSON.parse(cleaned);
+  const results = Array.isArray(parsed?.results) ? parsed.results : [];
+
+  return results
+    .map((r: any) => ({
+      id: String(r.id || ""),
+      score: typeof r.score === "number" ? r.score : 0,
+      reasons: typeof r.reasons === "string" ? r.reasons : "",
+    }))
+    .filter((r) => r.id);
 }

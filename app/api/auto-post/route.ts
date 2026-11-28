@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseJobEmail } from "@/lib/fikra";
-import { detectDuplicate, normalizeCompany } from "@/lib/duplicate";
+import { scoreDuplicateCandidates, normalizeCompany } from "@/lib/duplicate";
 import { getDuplicateThresholds } from "@/lib/settings";
 
 interface IncomingEmail {
@@ -105,36 +105,35 @@ export async function POST(req: NextRequest) {
   let duplicateReasons: string | null = null;
   let duplicateStatus = "none";
 
-  const candidates = await findCandidateJobs(title, company);
+    const candidates = await findCandidateJobs(title, company);
 
   if (candidates.length > 0) {
-    let best: { id: string; score: number; reasons: string } | null = null;
-    for (const cand of candidates) {
-      try {
-        const result = await detectDuplicate(
-          { title, company, location, description, applyUrl },
-          {
-            title: cand.title,
-            company: cand.company,
-            location: cand.location,
-            description: cand.description,
-            applyUrl: cand.applyUrl,
-          }
-        );
-        if (!best || result.score > best.score) {
-          best = { id: cand.id, score: result.score, reasons: result.reasons };
-        }
-        if (best && best.score >= 98) break;
-      } catch (e) {
-        console.error("Duplicate comparison failed:", e);
-      }
-    }
+    try {
+      const results = await scoreDuplicateCandidates(
+        { title, company, location, description, applyUrl },
+        candidates.map((c) => ({
+          id: c.id,
+          title: c.title,
+          company: c.company,
+          location: c.location,
+          description: c.description,
+          applyUrl: c.applyUrl,
+        }))
+      );
 
-    if (best && best.score >= thresholds.pending) {
-      duplicateScore = best.score;
-      duplicateOfId = best.id;
-      duplicateReasons = best.reasons;
-      duplicateStatus = best.score >= thresholds.confirm ? "confirmed" : "pending";
+      let best: { id: string; score: number; reasons: string } | null = null;
+      for (const r of results) {
+        if (!best || r.score > best.score) best = r;
+      }
+
+      if (best && best.score >= thresholds.pending) {
+        duplicateScore = best.score;
+        duplicateOfId = best.id;
+        duplicateReasons = best.reasons;
+        duplicateStatus = best.score >= thresholds.confirm ? "confirmed" : "pending";
+      }
+    } catch (e) {
+      console.error("Duplicate detection failed:", e);
     }
   }
 
