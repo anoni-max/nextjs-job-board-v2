@@ -13,9 +13,12 @@ const PRESETS: Record<string, { startDate: string; endDate: string }> = {
 };
 
 export async function GET(req: NextRequest) {
-  if (!req.cookies.has("admin_token")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const adminToken =
+  req.headers.get("x-admin-token") || req.cookies.get("admin_token")?.value;
+if (!adminToken) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+
   if (!GA_PROPERTY_ID) {
     return NextResponse.json({ error: "GA_PROPERTY_ID is not configured" }, { status: 500 });
   }

@@ -7,6 +7,12 @@ import {
   Search, Globe, Smartphone, Activity,
 } from "lucide-react";
 
+function getCookie(name: string) {
+  const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+  return m ? m[1] : "";
+}
+
+
 const RANGES = [
   { key: "today", label: "Today" },
   { key: "yesterday", label: "Yesterday" },
@@ -48,7 +54,9 @@ export default function AdminAnalytics() {
       params.set("start", customStart);
       params.set("end", customEnd);
     }
-    fetch(`/api/admin/analytics?${params.toString()}`)
+    fetch(`/api/admin/analytics?${params.toString()}`, {
+  headers: { "x-admin-token": getCookie("admin_token") },
+})
       .then(async (res) => {
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || "Failed to load analytics");
