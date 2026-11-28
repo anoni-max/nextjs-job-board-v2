@@ -4,42 +4,46 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { Home, Users, Briefcase, Globe, Lock, LogIn, LogOut, X } from "lucide-react";
+import { Search, Users, Briefcase, BookOpen, Info, Lock, LogIn, LogOut, X } from "lucide-react";
+
+const findJobsMenu = [
+  { label: "Browse Jobs", href: "/" },
+  { label: "Remote Jobs", href: "/jobs?type=Remote" },
+  { label: "Job Categories", href: "/jobs" },
+];
 
 const jobSeekerMenu = [
-  { label: "Browse Jobs", href: "/" },
-  { label: "Jobs Matched For You", href: "/matches" },
   { label: "My Profile", href: "/profile" },
+  { label: "Jobs Matched", href: "/matches" },
   { label: "Job Alerts", href: "/alerts" },
   { label: "Career Toolkit", href: "/career-toolkit" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Salary Guide", href: "/salary-guide" },
-  { label: "My subscription", href: "/subscription" },
 ];
 
 const employerMenu = [
   { label: "Post a Job", href: "/post" },
-  { label: "Talent Search", href: "/talent" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "Employer Dashboard", href: "/dashboard" },
 ];
 
-const communityMenu = [
-  { label: "Social Media", href: "/social-media" },
+const resourcesMenu = [
   { label: "Blog", href: "/blog" },
-  { label: "Reviews", href: "/reviews" },
+  { label: "CV Writing Tips", href: "/career-toolkit" },
+  { label: "Interview Preparation", href: "/career-toolkit" },
+  { label: "Salary Guide", href: "/salary-guide" },
+];
+
+const aboutMenu = [
   { label: "About Us", href: "/about" },
   { label: "Trust & Transparency", href: "/trust" },
   { label: "Contact", href: "/contact" },
   { label: "Help & FAQ", href: "/help" },
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
 ];
 
 const menus: Record<string, { title: string; items: { label: string; href: string }[] }> = {
+  findJobs: { title: "Find Jobs", items: findJobsMenu },
   seekers: { title: "Job Seekers", items: jobSeekerMenu },
   employers: { title: "Employers", items: employerMenu },
-  community: { title: "Community", items: communityMenu },
+  resources: { title: "Resources", items: resourcesMenu },
+  about: { title: "About", items: aboutMenu },
 };
 
 export default function MobileNav() {
@@ -99,14 +103,14 @@ export default function MobileNav() {
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
         <div className="flex justify-around items-stretch">
-          <Link href="/" className={itemCls(pathname === "/")}>
-            <Home className="w-5 h-5" />
+          <button onClick={() => toggleMenu("findJobs")} className={itemCls(openMenu === "findJobs")}>
+            <Search className="w-5 h-5" />
             <span className="mt-0.5">Jobs</span>
-          </Link>
+          </button>
 
           <button onClick={() => toggleMenu("seekers")} className={itemCls(openMenu === "seekers")}>
             <Users className="w-5 h-5" />
-            <span className="mt-0.5">Job Seekers</span>
+            <span className="mt-0.5">Seekers</span>
           </button>
 
           <button onClick={() => toggleMenu("employers")} className={itemCls(openMenu === "employers")}>
@@ -114,9 +118,14 @@ export default function MobileNav() {
             <span className="mt-0.5">Employers</span>
           </button>
 
-          <button onClick={() => toggleMenu("community")} className={itemCls(openMenu === "community")}>
-            <Globe className="w-5 h-5" />
-            <span className="mt-0.5">Community</span>
+          <button onClick={() => toggleMenu("resources")} className={itemCls(openMenu === "resources")}>
+            <BookOpen className="w-5 h-5" />
+            <span className="mt-0.5">Resources</span>
+          </button>
+
+          <button onClick={() => toggleMenu("about")} className={itemCls(openMenu === "about")}>
+            <Info className="w-5 h-5" />
+            <span className="mt-0.5">About</span>
           </button>
 
           {isAdmin && (

@@ -6,34 +6,36 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
-const jobSeekerMenu = [
+const findJobsMenu = [
   { label: "Browse Jobs", href: "/" },
-  { label: "Jobs Matched For You", href: "/matches" },
+  { label: "Remote Jobs", href: "/jobs?type=Remote" },
+  { label: "Job Categories", href: "/jobs" },
+];
+
+const jobSeekerMenu = [
   { label: "My Profile", href: "/profile" },
+  { label: "Jobs Matched", href: "/matches" },
   { label: "Job Alerts", href: "/alerts" },
   { label: "Career Toolkit", href: "/career-toolkit" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Salary Guide", href: "/salary-guide" },
-  { label: "My subscription", href: "/subscription" },
 ];
 
 const employerMenu = [
   { label: "Post a Job", href: "/post" },
-  { label: "Talent Search", href: "/talent" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "Employer Dashboard", href: "/dashboard" },
 ];
 
-const communityMenu = [
-  { label: "Social Media", href: "/social-media" },
+const resourcesMenu = [
   { label: "Blog", href: "/blog" },
-  { label: "Reviews", href: "/reviews" },
+  { label: "CV Writing Tips", href: "/career-toolkit" },
+  { label: "Interview Preparation", href: "/career-toolkit" },
+  { label: "Salary Guide", href: "/salary-guide" },
+];
+
+const aboutMenu = [
   { label: "About Us", href: "/about" },
   { label: "Trust & Transparency", href: "/trust" },
   { label: "Contact", href: "/contact" },
   { label: "Help & FAQ", href: "/help" },
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
 ];
 
 function NavDropdown({ label, items }: { label: string; items: { label: string; href: string }[] }) {
@@ -92,7 +94,7 @@ export default function Navbar() {
           Kazi<span className="text-blue-600">Spot</span>
         </Link>
 
-        <form onSubmit={handleSearch} className="flex-1 min-w-0 md:flex-none md:w-80">
+        <form onSubmit={handleSearch} className="flex-1 min-w-0 md:flex-none md:w-64">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -101,18 +103,19 @@ export default function Navbar() {
           />
         </form>
 
-        <div className="hidden md:flex items-center gap-4 ml-auto shrink-0">
-          <nav className="flex items-center gap-4">
-            <Link href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">Jobs</Link>
+        <div className="hidden md:flex items-center gap-3 ml-auto shrink-0">
+          <nav className="flex items-center gap-3">
+            <NavDropdown label="Find Jobs" items={findJobsMenu} />
             <NavDropdown label="Job Seekers" items={jobSeekerMenu} />
             <NavDropdown label="Employers" items={employerMenu} />
-            <NavDropdown label="Community" items={communityMenu} />
+            <NavDropdown label="Resources" items={resourcesMenu} />
+            <NavDropdown label="About" items={aboutMenu} />
           </nav>
 
           {isAdmin && (
             <Link
               href="/admin"
-              className="text-sm font-semibold text-blue-600 border border-blue-200 px-4 py-1.5 rounded-lg hover:bg-blue-50 whitespace-nowrap"
+              className="text-sm font-semibold text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 whitespace-nowrap"
             >
               Admin
             </Link>
@@ -128,7 +131,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/signin"
-              className="text-sm font-semibold text-gray-700 border border-gray-300 px-4 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+              className="text-sm font-semibold text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 whitespace-nowrap"
             >
               Sign in
             </Link>
