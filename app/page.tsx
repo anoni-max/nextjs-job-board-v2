@@ -1,15 +1,15 @@
 import FeedbackSection from "./components/FeedbackSection";
-import HomeClient from "./components/HomeClient";
+import HomeClient from "./HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
 import Categories from "./components/Categories";
 import CareerResources from "./components/CareerResources";
 import Testimonials from "./components/Testimonials";
 import FeedbackWidget from "./components/FeedbackWidget";
+import EmployerBanner from "./components/EmployerBanner";
+import TrustSection from "./components/TrustSection";
 import { prisma } from "@/lib/prisma";
 import StatsHeader from "./components/StatsHeader";
-
-
 
 export const dynamic = "force-dynamic";
 
@@ -63,17 +63,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
 
   return (
     <main className="min-h-screen">
-      {/* 1. Hero */}
       <Hero />
-
-      {/* 2. Latest Jobs */}
-      <StatsHeader
-        title="Latest Jobs"
-        subtitle="Discover remote and local opportunities"
-        count={activeCount}
-        countLabel="Active Jobs"
-        showSocialButton
-      />
+      <StatsHeader title="Latest Jobs" subtitle="Discover remote and local opportunities" count={activeCount} countLabel="Active Jobs" showSocialButton />
 
       <section className="max-w-3xl mx-auto px-4 py-8 scroll-mt-36" id="jobs">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -86,24 +77,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         </div>
       </section>
 
-      {/* 3. Sponsored ads */}
       <JobAds />
-
-      {/* 4. Categories */}
       <Categories />
-
-      {/* 5. Career resources */}
+      <EmployerBanner />
       <CareerResources />
-
-      {/* 6. Testimonials */}
+      <TrustSection />
       <Testimonials />
-
-      
       <FeedbackSection />
-    {/* ... footer / rest of page ... */}
-
-
-      {/* 7. Floating feedback button */}
       <FeedbackWidget />
     </main>
   );

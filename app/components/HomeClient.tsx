@@ -10,16 +10,6 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
   const [locationFilter, setLocationFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
 
-  const categories = [
-    "All", "Executive", "Customer Support", "Marketing",
-    "Ops", "Medical", "Education", "Finance", "Design"
-  ];
-
-  const locations = ["All", ...Array.from(new Set(jobs.map((j) => j.location).filter(Boolean)))];
-  const jobTypes = ["All", ...Array.from(new Set(
-    jobs.flatMap((j) => (j.employmentType || "").split(/[,/]/).map((s: string) => s.trim()).filter(Boolean))
-  ))];
-
   const filteredJobs = jobs.filter((job) => {
     if (activeCategory !== "All") {
       const matchesCat =
@@ -39,12 +29,7 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
     const url = (job.url || "").trim();
     const email = (job.applyEmail || "").trim();
     if (url) {
-      return {
-        href: url.startsWith("http") ? url : `https://${url}`,
-        isMailto: false,
-        label: "Apply",
-        method: "url" as const,
-      };
+      return { href: url.startsWith("http") ? url : `https://${url}`, isMailto: false, label: "Apply", method: "url" as const };
     }
     if (email) {
       return {
@@ -64,7 +49,6 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
 
   return (
     <div className="w-full">
-      {/* Job list */}
       <div className="flex flex-col">
         {filteredJobs.length === 0 ? (
           <div className="text-center py-12">
@@ -75,7 +59,6 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
             const apply = getApplyLink(job);
             return (
               <div key={job.id} className="group px-4 py-4 border-b border-gray-100 hover:bg-slate-50 transition-colors">
-                {/* Line 1: title + verified badge */}
                 <div className="flex items-center gap-2">
                   <Link href={`/jobs/${job.id}`} className="min-w-0 flex-1">
                     <h2 className="text-[15px] font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
@@ -90,10 +73,15 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                   )}
                 </div>
 
-                {/* Line 2: company */}
-                <p className="text-xs text-gray-500 mt-0.5 truncate">{job.company}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-500 truncate">{job.company}</p>
+                  {job.employmentType && (
+                    <span className="text-[11px] text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded whitespace-nowrap">
+                      {job.employmentType}
+                    </span>
+                  )}
+                </div>
 
-                {/* Line 3: location + time + view details + apply */}
                 <div className="flex items-center gap-2 mt-1.5">
                   <div className="flex items-center gap-1 text-xs text-gray-500 min-w-0">
                     <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -112,13 +100,7 @@ export default function HomeClient({ jobs }: { jobs: any[] }) {
                       href={apply.href}
                       target={apply.isMailto ? undefined : "_blank"}
                       rel="noopener noreferrer"
-                      onClick={() =>
-                        trackEvent("apply_click", {
-                          job_id: job.id,
-                          job_title: job.position,
-                          application_method: apply.method,
-                        })
-                      }
+                      onClick={() => trackEvent("apply_click", { job_id: job.id, job_title: job.position, application_method: apply.method })}
                       className="bg-blue-600 text-white text-xs font-semibold px-3.5 py-1 rounded-md hover:bg-blue-700 transition shadow-sm inline-flex items-center gap-1 whitespace-nowrap"
                     >
                       {apply.isMailto ? <Mail className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
