@@ -59,7 +59,7 @@ async function scoreBatch(profile: ProfileSummary, jobs: JobForMatch[], attempt 
   if (jobs.length === 0) return [];
 
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.MATCH_MODEL || "gemini-2.5-flash";
+  const model = process.env.MATCH_MODEL || "gemini-3.8-flash";
 
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 

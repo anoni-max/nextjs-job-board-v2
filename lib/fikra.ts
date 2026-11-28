@@ -23,7 +23,7 @@ function sleep(ms: number) {
 
 export async function parseJobEmail(rawText: string, attempt = 0): Promise<ParsedJob> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.PARSE_MODEL || "gemini-2.0-flash";
+  const model = process.env.PARSE_MODEL || "gemini-3.8-flash";
 
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
