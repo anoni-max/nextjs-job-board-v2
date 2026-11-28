@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
           { name: "screenPageViews" }, { name: "sessions" },
         ],
         dimensions: [{ name: "date" }],
-        orderBy: [{ name: "date", desc: false }],
+        orderBy: [{ name: "date", desc: false, type: "dimension" }],
       }),
       runReport({
         startDate: dates.startDate, endDate: dates.endDate,
