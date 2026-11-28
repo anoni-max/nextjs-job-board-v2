@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
       runReport({
         startDate: dates.startDate, endDate: dates.endDate,
         metrics: [
-          { name: "activeUsers" }, { name: "totalUsers" },
+          { name: "activeUsers" },
           { name: "screenPageViews" }, { name: "sessions" },
         ],
         dimensions: [{ name: "date" }],
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
       runReport({
         startDate: dates.startDate, endDate: dates.endDate,
         metrics: [{ name: "activeUsers" }],
-        dimensions: [{ name: "city" }],
+        dimensions: [{ name: "country" }, { name: "city" }],
         orderBy: [{ name: "activeUsers", desc: true }],
         limit: 10,
       }),
@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
       topPages: parsePageRows(topPages),
       topJobs: topJobsWithTitles,
       topCountries: parseRows(topCountries),
-      topCities: parseRows(topCities),
+      topCities: parseCityRows(topCities),
       sources: parseRows(sources),
       mediums: parseRows(mediums),
       devices: parseRows(devices),
@@ -170,9 +170,10 @@ export async function GET(req: NextRequest) {
       realtime: parseRealtime(realtime),
     });
   } catch (e: any) {
-    console.error("Analytics API error:", e?.message || e);
+    console.error("Analytics API error:", e);
+    const details = e?.details || e?.message || String(e);
     return NextResponse.json(
-      { error: "Failed to fetch analytics: " + (e?.message || String(e)) },
+      { error: "Failed to fetch analytics: " + details },
       { status: 500 }
     );
   }
@@ -203,6 +204,13 @@ function parseRows(res: any) {
   }));
 }
 
+function parseCityRows(res: any) {
+  return (res?.rows || []).map((r: any) => ({
+    dimension: r.dimensionValues?.[1]?.value || r.dimensionValues?.[0]?.value || "",
+    value: r.metricValues?.[0]?.value ?? "0",
+  }));
+}
+
 function parsePageRows(res: any) {
   return (res?.rows || []).map((r: any) => ({
     path: r.dimensionValues?.[0]?.value ?? "",
@@ -217,9 +225,8 @@ function parseTrend(res: any) {
   return (res?.rows || []).map((r: any) => ({
     date: r.dimensionValues?.[0]?.value ?? "",
     activeUsers: num(r.metricValues?.[0]?.value),
-    totalUsers: num(r.metricValues?.[1]?.value),
-    pageViews: num(r.metricValues?.[2]?.value),
-    sessions: num(r.metricValues?.[3]?.value),
+    pageViews: num(r.metricValues?.[1]?.value),
+    sessions: num(r.metricValues?.[2]?.value),
   }));
 }
 

@@ -4,14 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Users, Eye, BarChart3, Clock, MousePointerClick,
-  Search, Globe, Smartphone, Activity,
+  Search, Activity,
 } from "lucide-react";
-
-function getCookie(name: string) {
-  const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
-  return m ? m[1] : "";
-}
-
 
 const RANGES = [
   { key: "today", label: "Today" },
@@ -23,7 +17,6 @@ const RANGES = [
 
 const CHART_METRICS = [
   { key: "activeUsers", label: "Active users" },
-  { key: "totalUsers", label: "Total users" },
   { key: "pageViews", label: "Page views" },
   { key: "sessions", label: "Sessions" },
 ];
@@ -54,9 +47,7 @@ export default function AdminAnalytics() {
       params.set("start", customStart);
       params.set("end", customEnd);
     }
-    fetch(`/api/admin/analytics?${params.toString()}`, {
-  headers: { "x-admin-token": getCookie("admin_token") },
-})
+    fetch(`/api/admin/analytics?${params.toString()}`)
       .then(async (res) => {
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || "Failed to load analytics");
@@ -116,7 +107,6 @@ export default function AdminAnalytics() {
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-6 text-sm">{error}</div>
         ) : data ? (
           <>
-            {/* Realtime */}
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
               <Activity className="w-5 h-5 text-emerald-600" />
               <div>
@@ -125,7 +115,6 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            {/* Summary cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
               <Stat icon={<Users className="w-5 h-5" />} label="Active users" value={t?.activeUsers} />
               <Stat icon={<Users className="w-5 h-5" />} label="Total users" value={t?.totalUsers} />
@@ -138,7 +127,6 @@ export default function AdminAnalytics() {
               <Stat icon={<Users className="w-5 h-5" />} label="Returning users" value={t?.returningUsers} />
             </div>
 
-            {/* Traffic chart */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 className="font-bold text-gray-900">Traffic over time</h2>
@@ -164,7 +152,6 @@ export default function AdminAnalytics() {
               )}
             </div>
 
-            {/* Top pages */}
             <Card title="Most visited pages">
               {data.topPages?.length ? (
                 <table className="w-full text-sm">
@@ -190,7 +177,6 @@ export default function AdminAnalytics() {
               ) : <Empty />}
             </Card>
 
-            {/* Job performance */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <Card title="Most viewed jobs">
                 {data.topJobs?.length ? (
@@ -207,13 +193,9 @@ export default function AdminAnalytics() {
                   </ul>
                 ) : <Empty />}
               </Card>
-
-              <Card title="Traffic sources">
-                <Bars items={data.sources} />
-              </Card>
+              <Card title="Traffic sources"><Bars items={data.sources} /></Card>
             </div>
 
-            {/* Locations, devices, browsers */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card title="Top countries"><Bars items={data.topCountries} /></Card>
               <Card title="Top cities"><Bars items={data.topCities} /></Card>
