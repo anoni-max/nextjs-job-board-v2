@@ -261,6 +261,14 @@ export default function AdminDashboard() {
               </Link>
 
               <Link
+                 href="/admin/analytics"
+                className="text-sm text-blue-600 hover:underline font-bold bg-blue-50 px-4 py-2 rounded-lg"
+              >
+                Analytics
+              </Link>
+
+
+              <Link
                 href="/admin/job-ads"
                 className="text-sm text-cyan-600 hover:underline font-bold bg-cyan-50 px-4 py-2 rounded-lg"
               >
