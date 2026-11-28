@@ -171,7 +171,14 @@ export async function GET(req: NextRequest) {
     });
   } catch (e: any) {
     console.error("Analytics API error:", e);
-    const details = e?.details || e?.message || String(e);
+    let details = "";
+    const violations = e?.statusDetails?.[0]?.fieldViolations;
+    if (Array.isArray(violations) && violations.length) {
+      details = violations.map((v: any) => `${v.field}: ${v.description}`).join(" | ");
+    }
+    if (!details) {
+      details = e?.details || e?.message || String(e);
+    }
     return NextResponse.json(
       { error: "Failed to fetch analytics: " + details },
       { status: 500 }
@@ -244,16 +251,3 @@ function extractEventCount(res: any, eventName: string) {
   );
   return num(row?.metricValues?.[0]?.value);
 }
-} catch (e: any) {
-  console.error("Analytics API error:", e);
-  let details = "";
-  const violations = e?.statusDetails?.[0]?.fieldViolations;
-  if (Array.isArray(violations) && violations.length) {
-    details = violations.map((v: any) => `${v.field}: ${v.description}`).join(" | ");
-  }
-  if (!details) {
-    details = e?.details || e?.message || JSON.stringify(e, Object.getOwnPropertyNames(e));
-  }
-  return NextResponse.json({ error: "Failed: " + details }, { status: 500 });
-}
-
