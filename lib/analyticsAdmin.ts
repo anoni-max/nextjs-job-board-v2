@@ -22,7 +22,7 @@ export async function runReport(opts: {
   endDate: string;
   metrics: { name: string }[];
   dimensions?: { name: string }[];
-  orderBy?: { name: string; desc?: boolean }[];
+  orderBy?: { name: string; desc?: boolean; type?: "metric" | "dimension" }[];
   limit?: number;
   dimensionFilter?: any;
 }) {
@@ -32,11 +32,12 @@ export async function runReport(opts: {
     dateRanges: [{ startDate: opts.startDate, endDate: opts.endDate }],
     metrics: opts.metrics,
     dimensions: opts.dimensions || [],
-    orderBys: (opts.orderBy || []).map((o) => ({
-      metric: { metricName: o.name },
-      desc: o.desc ?? false,
-    })),
-    limit: opts.limit ? String(opts.limit) : undefined,
+    orderBys: (opts.orderBy || []).map((o) =>
+      (o.type || "metric") === "dimension"
+        ? { dimension: { dimensionName: o.name }, desc: o.desc ?? false }
+        : { metric: { metricName: o.name }, desc: o.desc ?? false }
+    ),
+    limit: opts.limit ?? undefined,
     dimensionFilter: opts.dimensionFilter,
   } as any);
   return response;
@@ -53,7 +54,7 @@ export async function runRealtimeReport(opts: {
     property: `properties/${GA_PROPERTY_ID}`,
     metrics: opts.metrics,
     dimensions: opts.dimensions || [],
-    limit: opts.limit ? String(opts.limit) : undefined,
+    limit: opts.limit ?? undefined,
     orderBys: (opts.orderBy || []).map((o) => ({
       metric: { metricName: o.name },
       desc: o.desc ?? false,
