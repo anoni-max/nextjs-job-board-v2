@@ -1,5 +1,5 @@
 import FeedbackSection from "./components/FeedbackSection";
-import HomeClient from "./HomeClient";
+import HomeClient from "./components/HomeClient";
 import Hero from "./components/Hero";
 import JobAds from "./components/JobAds";
 import Categories from "./components/Categories";
