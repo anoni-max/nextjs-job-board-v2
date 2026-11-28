@@ -13,12 +13,6 @@ const PRESETS: Record<string, { startDate: string; endDate: string }> = {
 };
 
 export async function GET(req: NextRequest) {
-  const adminToken =
-  req.headers.get("x-admin-token") || req.cookies.get("admin_token")?.value;
-if (!adminToken) {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-}
-
   if (!GA_PROPERTY_ID) {
     return NextResponse.json({ error: "GA_PROPERTY_ID is not configured" }, { status: 500 });
   }
@@ -134,7 +128,6 @@ if (!adminToken) {
       }),
     ]);
 
-    // Map top job page paths to real job titles from the DB
     const jobRows = parseRows(topJobs);
     const jobIds = jobRows.map((r) => r.dimension.replace("/jobs/", "")).filter(Boolean);
     const jobRecords = jobIds.length
