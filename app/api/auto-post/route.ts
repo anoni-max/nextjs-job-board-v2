@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseJobEmail } from "@/lib/fikra";
-import { scoreDuplicateCandidates, normalizeCompany } from "@/lib/duplicate";
+import { normalizeCompany } from "@/lib/duplicate";
 import { getDuplicateThresholds } from "@/lib/settings";
 
 interface IncomingEmail {
@@ -97,45 +97,33 @@ export async function POST(req: NextRequest) {
   const applyUrl = parsed.applyUrl || "";
   const applyEmail = parsed.applyEmail || null;
 
-  const thresholds = await getDuplicateThresholds();
-
-  // ---- Duplicate detection ----
+    // ---- Duplicate detection (fast DB check — no AI, fits Hobby's 10s limit) ----
   let duplicateScore: number | null = null;
   let duplicateOfId: string | null = null;
   let duplicateReasons: string | null = null;
   let duplicateStatus = "none";
 
-    const candidates = await findCandidateJobs(title, company);
+  try {
+    const normCompany = normalizeCompany(company);
+    const existingDuplicate = await prisma.job.findFirst({
+      where: {
+        rejected: false,
+        companyNormalized: normCompany || null,
+        title: { equals: title, mode: "insensitive" },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  if (candidates.length > 0) {
-    try {
-      const results = await scoreDuplicateCandidates(
-        { title, company, location, description, applyUrl },
-        candidates.map((c) => ({
-          id: c.id,
-          title: c.title,
-          company: c.company,
-          location: c.location,
-          description: c.description,
-          applyUrl: c.applyUrl,
-        }))
-      );
-
-      let best: { id: string; score: number; reasons: string } | null = null;
-      for (const r of results) {
-        if (!best || r.score > best.score) best = r;
-      }
-
-      if (best && best.score >= thresholds.pending) {
-        duplicateScore = best.score;
-        duplicateOfId = best.id;
-        duplicateReasons = best.reasons;
-        duplicateStatus = best.score >= thresholds.confirm ? "confirmed" : "pending";
-      }
-    } catch (e) {
-      console.error("Duplicate detection failed:", e);
+    if (existingDuplicate) {
+      duplicateScore = 95;
+      duplicateOfId = existingDuplicate.id;
+      duplicateReasons = "Exact company and title match";
+      duplicateStatus = "confirmed";
     }
+  } catch (e) {
+    console.error("Duplicate check failed:", e);
   }
+
 
   const job = await prisma.job.create({
     data: {
